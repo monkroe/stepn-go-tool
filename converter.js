@@ -1,4 +1,4 @@
-// Failas: converter.js
+// Failas: converter.js (Versija su teisingu USD logotipu)
 (function() {
     'use strict';
 
@@ -40,7 +40,12 @@
     function generateConverterCards() {
         if (!elements['converter-grid']) return;
         const tokenKeys = Object.keys(ALL_TOKENS_CONFIG);
-        const tokensToDisplay = [ { key: 'usd', symbol: 'USD', apiId: 'usd', fixedPrice: 1.0, logo: 'https://cdn-icons-png.flaticon.com/512/25/25473.png' }, ...tokenKeys.map(k => ALL_TOKENS_CONFIG[k]).filter(t => t)];
+        
+        // PATAISYMAS: Naudojam teisingą SVG dolerio ženklui
+        const usdLogo = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48bGluZSB4MT0iMTIiIHkxPSIxIiB4Mj0iMTIiIHkyPSIyMyI+PC9saW5lPjxwYXRoIGQ9Ik0xNyA1IDcuNSA0IDQgMiAwIDEyIDQgNCA4IDAgOC00IDAtNy41LTQgMC04IDAgOC00IDAtNy41LTQtNC0yIDAtMTIgNC00IDgtOCA4eiI+PC9wYXRoPjwvc3ZnPg==';
+        
+        const tokensToDisplay = [ { key: 'usd', symbol: 'USD', apiId: 'usd', fixedPrice: 1.0, logo: usdLogo }, ...tokenKeys.map(k => ALL_TOKENS_CONFIG[k]).filter(t => t)];
+        
         let html = '';
         tokensToDisplay.forEach(token => {
             html += `
