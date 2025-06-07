@@ -8,12 +8,12 @@
 // Atnaujinkite TIK šį objektą savo script.js faile
 
 const ALL_TOKENS_CONFIG = {
-    // PATAISYTOS NUORODOS Į STEPN ŽETONUS
+    // PATAISYTOS IR PATIKRINTOS NUORODOS
     'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/18069.png' },
     'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/31191.png' },
     'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/16353.png' },
     
-    // LIKUSIOS NUORODOS
+    // LIKUSIOS NUORODOS, KURIOS VEIKIA
     'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
     'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
     'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
