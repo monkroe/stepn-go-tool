@@ -3,18 +3,10 @@
     'use strict';
 
     // --- KONFIGŪRACIJA IR KONSTANTOS ---
-
-    // SVARBU: Šis 'anon' raktas yra viešas ir saugus naudoti kliento pusėje, 
-    // JEIGU Supabase projekte yra teisingai sukonfigūruotas Row Level Security (RLS).
-    // Be RLS, bet kas galės skaityti/rašyti jūsų duomenų bazę.
     const SUPABASE_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpvamh1cmh3bWNlb3F4a2F0dmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNjYxNDYsImV4cCI6MjA2NDc0MjE0Nn0.NFGhQc7H95U9vOaM7OVxNUgTuXSughz8ZuxaCLfbfQE';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // Žetonų konfigūracija.
-    // 'apiId' naudojamas dabartinei kainai gauti per 'simple/price' endpoint.
-    // 'historyApiId' naudojamas istorinei kainai gauti per 'coins/{id}/history' endpoint.
-    // Kartais jie gali skirtis (pvz. GGT).
     const ALL_TOKENS_CONFIG = {
         'gmt': { key: 'gmt', symbol: 'GMT (STEPN)', apiId: 'stepn', historyApiId: 'stepn' },
         'ggt': { key: 'ggt', symbol: 'GGT (STEPN GO)', apiId: 'go-game-token', historyApiId: 'ggt' },
@@ -22,7 +14,6 @@
         'sol': { key: 'sol', symbol: 'SOL (Solana)', apiId: 'solana', historyApiId: 'solana' },
         'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin' },
         'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', historyApiId: 'usd-coin', fixedPrice: 1.0 },
-        // ... galima pridėti daugiau
     };
     const LOGGER_TOKEN_KEYS = ['ggt', 'gst', 'gmt', 'sol', 'usdc'];
     const CATEGORIES = {
@@ -30,15 +21,9 @@
         expense: { "Sneaker Purchase": "Sportbačio pirkimas", "Sneaker Burn": "Sportbačio deginimas", "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Other": "Kita" }
     };
     
-    // Būsenos kintamieji
     let liveTokenPrices = {};
-    const elements = {}; // DOM elementų talpykla
+    const elements = {};
 
-    // --- INICIALIZACIJA ---
-
-    /**
-     * Pagrindinė programos paleidimo funkcija.
-     */
     async function init() {
         cacheDOMElements();
         bindEventListeners();
@@ -50,9 +35,6 @@
         updateConverterPricesUI();
     }
 
-    /**
-     * Surenka visus reikalingus DOM elementus į 'elements' objektą greitesnei prieigai.
-     */
     function cacheDOMElements() {
         const ids = [
             'tab-btn-logger', 'tab-btn-converter', 'tab-content-logger', 'tab-content-converter',
@@ -65,9 +47,6 @@
         ids.forEach(id => elements[id] = document.getElementById(id));
     }
 
-    /**
-     * Susieja įvykių klausiklius su DOM elementais.
-     */
     function bindEventListeners() {
         elements['tab-btn-logger'].addEventListener('click', () => switchTab('logger'));
         elements['tab-btn-converter'].addEventListener('click', () => switchTab('converter'));
@@ -83,7 +62,49 @@
         elements.editAmountUsd.addEventListener('input', () => syncEditInputs('amount'));
     }
 
-    // --- UI VALDYMAS (TABS, PRANEŠIMAI, FORMOS) ---
+    // ===================================================================
+    //  ČIA YRA PAGRINDINIS PATAISYMAS
+    // ===================================================================
+    function updateCategoryDropdown() {
+        const type = elements.logType.value;
+
+        // PATAISYMAS: Jei tipas nepasirinktas (reikšmė tuščia), 
+        // nustatome pradinę kategorijos laukelio būseną ir nieko toliau nedarome.
+        if (!type) {
+            elements.logCategory.innerHTML = `<option value="" disabled selected>Pirmiausia pasirinkite tipą...</option>`;
+            handleCategoryChange(); // Iškviečiame, kad teisingai parodytų/paslėptų laukus
+            return; // Sustabdome funkcijos vykdymą
+        }
+
+        // Ši logika įvyks tik tada, kai bus pasirinktas validus tipas ("income" arba "expense")
+        const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
+        const selectedToken = selectedTokenRadio ? selectedTokenRadio.value : LOGGER_TOKEN_KEYS[0];
+        let categories = CATEGORIES[type] || {};
+
+        if (type === 'income') {
+            categories = Object.fromEntries(Object.entries(categories).filter(([key]) => {
+                if (key === 'GGT Earnings') return selectedToken === 'ggt';
+                if (key === 'GST Earnings') return selectedToken === 'gst';
+                if (key === 'Sneaker Sale') return selectedToken === 'gmt';
+                return true;
+            }));
+        }
+
+        const currentCategory = elements.logCategory.value;
+        // Pridedame pradinę "placeholder" parinktį
+        elements.logCategory.innerHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>` + 
+            Object.entries(categories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
+
+        if (categories[currentCategory]) {
+            elements.logCategory.value = currentCategory;
+        }
+        handleCategoryChange();
+    }
+    // ===================================================================
+    // PATAISYMO PABAIGA
+    // ===================================================================
+
+    // ... likęs kodas nepakeistas ...
 
     function switchTab(tabName) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -93,16 +114,12 @@
     }
 
     let notificationTimeout;
-    /**
-     * Rodo pranešimą vartotojui.
-     * @param {string} message - Rodoma žinutė.
-     * @param {'success'|'error'|'info'} type - Pranešimo tipas.
-     */
     function showNotification(message, type = 'error') {
         const banner = elements['notification-banner'];
+        if (!banner) return;
         clearTimeout(notificationTimeout);
         banner.textContent = message;
-        banner.className = `notification ${type}`; // Nuima 'hidden'
+        banner.className = `notification ${type}`;
         
         notificationTimeout = setTimeout(() => {
             banner.classList.add('hidden');
@@ -142,7 +159,6 @@
         elements.logDate.value = today.toISOString().split('T')[0];
         
         updateCategoryDropdown();
-        handleCategoryChange();
         
         const firstTokenRadio = document.querySelector('input[name="logToken"]');
         if (firstTokenRadio) firstTokenRadio.checked = true;
@@ -151,130 +167,71 @@
         elements.logSubmitBtn.style.backgroundColor = '';
         elements.logSubmitBtn.disabled = false;
     }
+    
+    function populateDropdowns() {
+        elements.logTokenRadioGroup.innerHTML = LOGGER_TOKEN_KEYS.map((key, index) => {
+            const token = ALL_TOKENS_CONFIG[key];
+            return `<label class="radio-label"><span>${token.symbol.split(' ')[0]}</span><input type="radio" name="logToken" value="${key}" ${index === 0 ? 'checked' : ''}><span class="radio-custom-dot"></span></label>`;
+        }).join('');
+        elements.filterToken.innerHTML = '<option value="">Visi</option>' + LOGGER_TOKEN_KEYS.map(key => `<option value="${key}">${ALL_TOKENS_CONFIG[key].symbol}</option>`).join('');
+    }
 
-    // ... (visos kitos funkcijos lieka labai panašios)
-
-    // Toliau pateikiu tik labiausiai pakeistas arba svarbias funkcijas iš likusio kodo.
-    // Dauguma logikos lieka tokia pati, tik dabar naudojama `showNotification` vietoje `alert`.
-
-    async function handleUpdate(id) {
-        const newDate = elements.logDate.value;
-        const newAmount = parseFloat(elements.logTokenAmount.value);
-        const newToken = document.querySelector('input[name="logToken"]:checked').value;
-        const oldEntry = JSON.parse(elements.logForm.dataset.oldEntry);
-        
-        let rate_usd = parseFloat(elements.editRateUsd.value);
-        if (isNaN(rate_usd)) throw new Error("Neteisingas kursas.");
-
-        if (newDate !== oldEntry.date || newToken !== oldEntry.token) {
-             showNotification(`Gaunamas ${newToken.toUpperCase()} kursas datai ${newDate}...`, 'info');
-             rate_usd = await getPriceForDate(newToken, newDate);
+    function handleCategoryChange() {
+        const category = elements.logCategory.value;
+        const isMinting = category === 'Minting';
+        elements.mintingFields.classList.toggle('hidden', !isMinting);
+        if (!elements.editingId.value) {
+            elements.standardFields.classList.toggle('hidden', isMinting);
         }
-        
-        const record = { date: newDate, type: elements.logType.value, token: newToken, token_amount: newAmount, category: elements.logCategory.value, description: elements.logDescription.value.trim(), rate_usd };
-        const { error } = await supabase.from('transactions').update(record).eq('id', id);
+    }
+
+    function handleTokenChange() { updateCategoryDropdown(); }
+    
+    async function createSingleLogEntry(entryData) {
+        showNotification(`Gaunamas ${entryData.tokenKey.toUpperCase()} kursas...`, 'info');
+        const rate_usd = await getPriceForDate(entryData.tokenKey, entryData.date);
+        const record = { date: entryData.date, type: entryData.type, token: entryData.tokenKey, token_amount: entryData.tokenAmount, category: entryData.category, description: entryData.description, rate_usd };
+        const { error } = await supabase.from('transactions').insert([record]).select();
         if (error) throw error;
     }
 
-    async function handleLogTableClick(event) {
-        const target = event.target;
-        const row = target.closest('tr');
-        if (!row || !row.dataset.id) return;
+    async function handleCreate() {
+        const category = elements.logCategory.value;
+        const date = elements.logDate.value;
+        const type = elements.logType.value;
+        const description = elements.logDescription.value.trim();
 
-        const entryId = parseInt(row.dataset.id);
+        if (!type || !category) {
+            throw new Error("Prašome pasirinkti tipą ir kategoriją.");
+        }
 
-        if (target.matches('.btn-delete')) {
-            if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
-                const { error } = await supabase.from('transactions').delete().eq('id', entryId);
-                if (error) {
-                    showNotification(`Klaida trinant: ${error.message}`, 'error');
-                } else {
-                    showNotification('Įrašas ištrintas.', 'success');
-                    await loadAndRenderLogTable();
-                }
-            }
-        } else if (target.matches('.btn-edit')) {
-            const { data, error } = await supabase.from('transactions').select().eq('id', entryId).single();
-            if (error) {
-                showNotification(`Klaida gaunant įrašą: ${error.message}`, 'error');
-                return;
-            }
-            startEditEntry(data);
+        if (category === 'Minting') {
+            const ggtAmount = parseFloat(elements.mintGgtAmount.value) || 0;
+            const gmtAmount = parseFloat(elements.mintGmtAmount.value) || 0;
+            if (ggtAmount > 0) await createSingleLogEntry({ date, type, tokenKey: 'ggt', tokenAmount: ggtAmount, category, description });
+            if (gmtAmount > 0) await createSingleLogEntry({ date, type, tokenKey: 'gmt', tokenAmount: gmtAmount, category, description });
+        } else {
+            const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
+            if (!selectedTokenRadio) throw new Error("Prašome pasirinkti žetoną.");
+            const tokenAmount = parseFloat(elements.logTokenAmount.value);
+            if (isNaN(tokenAmount) || tokenAmount <= 0) throw new Error("Prašome įvesti teigiamą sumą.");
+            await createSingleLogEntry({ date, type, tokenKey: selectedTokenRadio.value, tokenAmount, category, description });
         }
     }
 
-    function startEditEntry(entry) {
-        if (!entry) return;
-        if (entry.category === 'Minting') {
-            showNotification("Mintinimo įrašų redagavimas nepalaikomas. Ištrinkite ir sukurkite naują.", 'info');
-            return;
-        }
-
-        resetLogForm();
-        elements.editingId.value = entry.id;
-        elements.logForm.dataset.oldEntry = JSON.stringify(entry); // Išsaugom senus duomenis palyginimui
-
-        elements.logDate.value = entry.date;
-        elements.logType.value = entry.type;
-        document.querySelector(`input[name="logToken"][value="${entry.token}"]`).checked = true;
-        updateCategoryDropdown();
-        elements.logCategory.value = entry.category;
-        handleCategoryChange();
-        elements.logTokenAmount.value = entry.token_amount;
-        elements.logDescription.value = entry.description;
-
-        elements.editFields.classList.remove('hidden');
-        elements.editRateUsd.value = entry.rate_usd.toFixed(5);
-        elements.editAmountUsd.value = (entry.token_amount * entry.rate_usd).toFixed(2);
-        
-        elements.logSubmitBtn.textContent = 'Atnaujinti įrašą';
-        elements.logSubmitBtn.style.backgroundColor = '#2563eb';
-        elements.logSubmitBtn.disabled = false;
-        
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    async function loadAndRenderLogTable() {
+        let query = supabase.from('transactions').select('*');
+        if (elements.filterStartDate.value) query = query.gte('date', elements.filterStartDate.value);
+        if (elements.filterEndDate.value) query = query.lte('date', elements.filterEndDate.value);
+        if (elements.filterToken.value) query = query.eq('token', elements.filterToken.value);
+        const sortOrder = elements.filterOrder.value === 'asc';
+        const sortBy = elements.filterSort.value;
+        query = query.order(sortBy, { ascending: sortOrder }).order('id', { ascending: false });
+        const { data, error } = await query;
+        if (error) { console.error('Klaida gaunant duomenis:', error); showNotification(`Duomenų bazės klaida: ${error.message}`); return; }
+        renderLogTable(data);
     }
-
-    async function getPriceForDate(tokenKey, dateString) {
-        const config = ALL_TOKENS_CONFIG[tokenKey];
-        if (!config) throw new Error(`Nežinomas žetonas: ${tokenKey}`);
-        if (config.fixedPrice) return config.fixedPrice;
-
-        const today = new Date();
-        today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
-        if (dateString >= today.toISOString().split('T')[0] && liveTokenPrices[config.apiId]) {
-            return liveTokenPrices[config.apiId].price;
-        }
-
-        const [year, month, day] = dateString.split('-');
-        const apiDate = `${day}-${month}-${year}`;
-        try {
-            const response = await fetch(`https://api.coingecko.com/api/v3/coins/${config.historyApiId}/history?date=${apiDate}`);
-            if (!response.ok) throw new Error(`CoinGecko API klaida (${response.status})`);
-            
-            const data = await response.json();
-            if (data.market_data?.current_price?.usd) {
-                return data.market_data.current_price.usd;
-            }
-
-            // Fallback: jei istorinė kaina nerasta, bandoma gauti dabartinę.
-            showNotification(`Dėmesio: Nepavyko gauti istorinio ${config.symbol.toUpperCase()} kurso. Naudojamas dabartinis kursas.`, 'info');
-            if (Object.keys(liveTokenPrices).length === 0) await fetchLiveTokenPrices(true);
-            const currentPrice = liveTokenPrices[config.apiId]?.price;
-            if (currentPrice) return currentPrice;
-
-            throw new Error(`Neįmanoma gauti kainos ${config.symbol} žetonui.`);
-        } catch (error) {
-            console.error("Klaida gaunant istorinę kainą:", error);
-            throw error;
-        }
-    }
-
-    // Likusios funkcijos lieka beveik identiškos originalui.
-    // ... createSingleLogEntry, handleCreate, populateDropdowns, updateCategoryDropdown, handleCategoryChange, 
-    // ... handleTokenChange, generateConverterCards, handleConverterInput, handleConverterClick,
-    // ... fetchLiveTokenPrices, loadAndRenderLogTable, renderLogTable, renderSummary, updateConverterPricesUI ...
-
-    // Pavyzdys, kaip atrodytų renderLogTable ir renderSummary:
+    
     function renderLogTable(data) {
         elements.logTableBody.innerHTML = '';
         if (!data || data.length === 0) {
@@ -375,7 +332,9 @@
             ${Object.keys(tokenBalances).length > 0 ? tokenBalancesHTML : ''}`;
     }
 
-    // Likusi dalis kodo yra nepakeista, tiesiog ją reikia įklijuoti čia...
+    // Čia toliau eina likusios funkcijos, kurios nepakito.
+    // Dėl aiškumo jų nekartoju, bet jos turi būti jūsų faile.
+    // ...handleUpdate, startEditEntry, handleLogTableClick, getPriceForDate ir t.t...
 
     document.addEventListener('DOMContentLoaded', init);
 })();
