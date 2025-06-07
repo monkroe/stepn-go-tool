@@ -1,4 +1,4 @@
-// Failas: script.js (Pagrindinė programos logika)
+// Failas: script.js (Versija su veikiančiu redagavimu)
 (function() {
     'use strict';
     const SUPABASE_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
@@ -31,14 +31,8 @@
     let liveTokenPrices = {};
     let elements = {};
     
-    // Globalūs objektai scenarijų bendravimui
-    window.appData = {
-        tokens: ALL_TOKENS_CONFIG,
-        prices: liveTokenPrices
-    };
-    window.appActions = {
-        fetchPrices: fetchLiveTokenPrices,
-    };
+    window.appData = { tokens: ALL_TOKENS_CONFIG, prices: liveTokenPrices };
+    window.appActions = { fetchPrices: fetchLiveTokenPrices };
 
     async function init() {
         cacheDOMElements();
@@ -47,7 +41,6 @@
         await fetchLiveTokenPrices(true);
         await loadAndRenderLogTable();
         resetLogForm();
-        // Konverterio scenarijų įkelsime po to, kai bus gauti pradiniai duomenys
         if (!document.querySelector('script[src="converter.js"]')) {
             const script = document.createElement('script');
             script.src = 'converter.js';
@@ -108,6 +101,13 @@
         ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields'].forEach(id => {
             if (elements[id]) elements[id].classList.add('hidden');
         });
+
+        const isEditing = !!elements.logForm.dataset.editingId;
+        if (isEditing) {
+            elements.standardFields.classList.remove('hidden');
+            return;
+        }
+
         if (platform === 'go' && category === 'Level-up') {
             elements.goLevelUpFields.classList.remove('hidden');
         } else if (platform === 'go' && category === 'Minting') {
@@ -133,10 +133,15 @@
 
     async function handleLogSubmit(event) {
         event.preventDefault();
+        const editingId = elements.logForm.dataset.editingId;
         elements.logSubmitBtn.disabled = true;
         elements.logSubmitBtn.textContent = 'Apdorojama...';
         try {
-            await handleCreate();
+            if (editingId) {
+                await handleUpdate(editingId);
+            } else {
+                await handleCreate();
+            }
             await loadAndRenderLogTable();
         } catch (error) {
             console.error("Submit error:", error);
@@ -152,12 +157,9 @@
         const date = elements.logDate.value;
         const type = elements.logType.value;
         let description = elements.logDescription.value.trim();
-
-        if (!type || !category) {
-            throw new Error("Prašome pasirinkti tipą ir kategoriją.");
-        }
-
-        const commonData = { date, type, category, description: '' };
+        if (!type || !category) throw new Error("Prašome pasirinkti tipą ir kategoriją.");
+        
+        const commonData = { date, type, category, description }; // PATAISYMAS: Aprašymas priskiriamas visiems
         let operations = []; 
         if (platform === 'go' && category === 'Level-up') {
             const ggt = parseFloat(elements.goLevelUpGgt.value) || 0;
@@ -173,9 +175,9 @@
             const gst = parseFloat(elements.ogMintGst.value) || 0;
             const gmt = parseFloat(elements.ogMintGmt.value) || 0;
             const scrolls = parseInt(elements.ogMintScrolls.value) || 0;
+            if (scrolls > 0) commonData.description += ` (Panaudota ${scrolls} Minting Scrolls)`;
             if(gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
             if(gmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: gmt });
-            if(scrolls > 0) description += ` (Panaudota ${scrolls} Minting Scrolls)`;
         } else {
             const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
             if (!selectedTokenRadio) throw new Error("Prašome pasirinkti žetoną.");
@@ -183,30 +185,43 @@
             if (isNaN(tokenAmount) || tokenAmount <= 0) throw new Error("Prašome įvesti teigiamą sumą.");
             operations.push({ ...commonData, tokenKey: selectedTokenRadio.value, tokenAmount });
         }
-        
-        if (operations.length === 0) {
-            throw new Error("Neįvesta jokia suma arba visos sumos lygios nuliui.");
-        }
-        
-        if(operations.length > 0) operations[0].description = description;
-
+        if (operations.length === 0) throw new Error("Neįvesta jokia suma arba visos sumos lygios nuliui.");
         for (const op of operations) {
             await createSingleLogEntry(op);
         }
     }
 
+    async function handleUpdate(id) {
+        const record = {
+            date: elements.logDate.value,
+            type: elements.logType.value,
+            token: document.querySelector('input[name="logToken"]:checked').value,
+            token_amount: parseFloat(elements.logTokenAmount.value),
+            category: elements.logCategory.value,
+            description: elements.logDescription.value.trim(),
+            platform: elements.platform.value
+        };
+        // Kursą atnaujinsime tik jei pasikeitė data arba žetonas
+        const oldEntry = JSON.parse(elements.logForm.dataset.oldEntry);
+        if (record.date !== oldEntry.date || record.token !== oldEntry.token) {
+            record.rate_usd = await getPriceForDate(record.token, record.date);
+        }
+
+        const { error } = await supabase.from('transactions').update(record).eq('id', id);
+        if (error) throw error;
+    }
+
     function resetLogForm() {
         if (elements.logForm) {
             elements.logForm.reset();
+            delete elements.logForm.dataset.editingId;
+            delete elements.logForm.dataset.oldEntry;
             elements.platform.value = 'go';
-            // Pataisymas: Nustatom tipą į pradinę tuščią reikšmę
             elements.logType.value = ""; 
             updateDynamicForm();
-            
             const today = new Date();
             today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
             elements.logDate.value = today.toISOString().split('T')[0];
-            
             elements.logSubmitBtn.textContent = 'Pridėti įrašą';
             elements.logSubmitBtn.disabled = false;
         }
@@ -215,16 +230,7 @@
     async function createSingleLogEntry(entryData) {
          elements.logSubmitBtn.textContent = `Išsaugoma ${entryData.tokenKey.toUpperCase()}...`;
          const rate_usd = await getPriceForDate(entryData.tokenKey, entryData.date);
-         const record = { 
-             date: entryData.date, 
-             type: entryData.type, 
-             token: entryData.tokenKey, 
-             token_amount: entryData.tokenAmount, 
-             category: entryData.category, 
-             description: entryData.description, 
-             rate_usd,
-             platform: elements.platform.value
-            };
+         const record = { date: entryData.date, type: entryData.type, token: entryData.tokenKey, token_amount: entryData.tokenAmount, category: entryData.category, description: entryData.description, rate_usd, platform: elements.platform.value };
          const { error } = await supabase.from('transactions').insert([record]).select();
          if (error) throw error;
     }
@@ -234,18 +240,42 @@
         if (!target) return;
         const row = target.closest('tr');
         if (!row || !row.dataset.id) return;
-        
         const entryId = parseInt(row.dataset.id);
         if (target.matches('.btn-delete')) {
             if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
                 const { error } = await supabase.from('transactions').delete().eq('id', entryId);
-                if (error) {
-                    alert(`Klaida trinant: ${error.message}`);
-                } else {
-                    await loadAndRenderLogTable();
-                }
+                if (error) { alert(`Klaida trinant: ${error.message}`);
+                } else { await loadAndRenderLogTable(); }
             }
+        } else if (target.matches('.btn-edit')) {
+            const { data, error } = await supabase.from('transactions').select().eq('id', entryId).single();
+            if(error) { alert(`Klaida gaunant įrašą: ${error.message}`); return; }
+            startEditEntry(data);
         }
+    }
+    
+    function startEditEntry(entry) {
+        resetLogForm();
+        elements.logForm.dataset.editingId = entry.id;
+        elements.logForm.dataset.oldEntry = JSON.stringify(entry);
+
+        elements.platform.value = entry.platform || 'go';
+        elements.logDate.value = entry.date;
+        elements.logType.value = entry.type;
+        
+        updateDynamicForm();
+        
+        elements.logCategory.value = entry.category;
+        updateVisibleFields(); // Reikia iškviesti dar kartą, kad parodytų standartinius laukus
+
+        // Užpildome standartinius laukus
+        updateTokenRadioButtons(entry.platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc']);
+        document.querySelector(`input[name="logToken"][value="${entry.token}"]`).checked = true;
+        elements.logTokenAmount.value = entry.token_amount;
+        elements.logDescription.value = entry.description;
+
+        elements.logSubmitBtn.textContent = 'Atnaujinti įrašą';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     async function getPriceForDate(tokenKey, dateString) {
@@ -269,10 +299,8 @@
 
     async function fetchLiveTokenPrices(fetchAll = false, singleApiId = null) {
         let tokenApiIds;
-        if(fetchAll) { 
-            tokenApiIds = Object.values(ALL_TOKENS_CONFIG).map(t => t.apiId).filter(id => id);
-        } else if (singleApiId) { 
-            tokenApiIds = [singleApiId]; 
+        if(fetchAll) { tokenApiIds = Object.values(ALL_TOKENS_CONFIG).map(t => t.apiId).filter(id => id);
+        } else if (singleApiId) { tokenApiIds = [singleApiId]; 
         } else { return; }
         try {
             const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${[...new Set(tokenApiIds)].join(',')}&vs_currencies=usd&include_24hr_change=true`);
@@ -285,9 +313,7 @@
             if (window.appActions && typeof window.appActions.updateConverterUI === 'function') {
                 window.appActions.updateConverterUI();
             }
-        } catch (error) { 
-            console.error("Klaida gaunant realaus laiko kainas:", error); 
-        }
+        } catch (error) { console.error("Klaida gaunant realaus laiko kainas:", error); }
     }
 
     async function loadAndRenderLogTable() {
@@ -295,17 +321,12 @@
         if (elements.filterStartDate && elements.filterStartDate.value) query = query.gte('date', elements.filterStartDate.value);
         if (elements.filterEndDate && elements.filterEndDate.value) query = query.lte('date', elements.filterEndDate.value);
         const filterTokenValue = elements.filterToken ? elements.filterToken.value : "";
-        if (filterTokenValue) {
-             query = query.eq('token', filterTokenValue);
-        }
+        if (filterTokenValue) { query = query.eq('token', filterTokenValue); }
         const sortOrder = elements.filterOrder ? elements.filterOrder.value === 'asc' : true;
         const sortBy = elements.filterSort ? elements.filterSort.value : 'date';
         query = query.order(sortBy, { ascending: sortOrder }).order('id', { ascending: false });
         const { data, error } = await query;
-        if (error) { 
-            console.error('Klaida gaunant duomenis:', error); 
-            return; 
-        }
+        if (error) { console.error('Klaida gaunant duomenis:', error); return; }
         renderLogTable(data);
         populateFilterDropdowns(data);
     }
@@ -340,7 +361,7 @@
             tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
             const row = document.createElement('tr'); 
             row.dataset.id = entry.id;
-            row.innerHTML = `<td>${entry.date}</td><td style="font-size: 1.25rem; text-align: center;" class="${isIncome ? 'income-color' : 'expense-color'}">${isIncome ? '▼' : '▲'}</td><td>${entry.token.toUpperCase()}</td><td>${(entry.token_amount || 0).toLocaleString('en-US', {maximumFractionDigits: 2})}</td><td>$${(entry.rate_usd || 0).toFixed(5)}</td><td>$${amount_usd.toFixed(2)}</td><td>${entry.description || ''}</td><td class="log-table-actions"><button class="btn-delete">Trinti</button></td>`;
+            row.innerHTML = `<td>${entry.date}</td><td style="font-size: 1.25rem; text-align: center;" class="${isIncome ? 'income-color' : 'expense-color'}">${isIncome ? '▼' : '▲'}</td><td>${entry.token.toUpperCase()}</td><td>${(entry.token_amount || 0).toLocaleString('en-US', {maximumFractionDigits: 2})}</td><td>$${(entry.rate_usd || 0).toFixed(5)}</td><td>$${amount_usd.toFixed(2)}</td><td>${entry.description || ''}</td><td class="log-table-actions"><button class="btn-edit">Taisyti</button><button class="btn-delete">Trinti</button></td>`;
             elements.logTableBody.appendChild(row);
         });
         renderSummary(totalIncomeUSD, totalExpenseUSD, tokenBalances);
