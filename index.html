@@ -31,7 +31,6 @@
                     <div class="grid-2-cols">
                         <div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div>
                         <div class="input-group"><label for="logType">Tipas</label>
-                            <!-- PATAISYMAS ČIA -->
                             <select id="logType" required>
                                 <option value="" disabled selected>Pasirinkite tipą...</option>
                                 <option value="expense">Išlaidos</option>
@@ -57,6 +56,12 @@
                             <div class="input-group"><label for="ogMintGmt">GMT Suma</label><input type="number" id="ogMintGmt" step="any" placeholder="GMT kiekis"></div>
                         </div>
                         <div class="input-group"><label for="ogMintScrolls">Minting Scrolls Kiekis</label><input type="number" id="ogMintScrolls" step="1" placeholder="pvz., 2"></div>
+                    </div>
+                    
+                    <!-- PATAISYMAS: Grąžiname redagavimo laukelius -->
+                    <div id="editFields" class="hidden grid-2-cols">
+                        <div class="input-group"><label for="editRateUsd">Kursas (USD)</label><input type="number" id="editRateUsd" step="any"></div>
+                        <div class="input-group"><label for="editAmountUsd">Suma (USD)</label><input type="number" id="editAmountUsd" step="any"></div>
                     </div>
                     
                     <div class="input-group mt-4"><label for="logDescription">Aprašymas (nebūtina)</label><input type="text" id="logDescription" placeholder="pvz., Parduotas 'Jogger'"></div>
