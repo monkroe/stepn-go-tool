@@ -5,17 +5,22 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpvamh1cmh3bWNlb3F4a2F0dmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNjYxNDYsImV4cCI6MjA2NDc0MjE0Nn0.NFGhQc7H95U9vOaM7OVxNUgTuXSughz8ZuxaCLfbfQE';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    const ALL_TOKENS_CONFIG = {
-        'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', logo: 'https://assets.coingecko.com/coins/images/23594/large/gmt.png?1696522971' },
-        'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', logo: 'https://assets.coingecko.com/coins/images/36959/large/GGT_Logo_200x200.png?1712128784' },
-        'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', logo: 'https://assets.coingecko.com/coins/images/21991/large/O4GfG2C.png?1696521406' },
-        'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png?1696504756' },
-        'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png?1696506694' },
-        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png?1696501400' },
-        'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png?1696501661' },
-        'bnb':  { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png?1696502170' },
-        'eth':  { key: 'eth', symbol: 'ETH', apiId: 'ethereum', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png?1696501628' }
-    };
+// Atnaujinkite TIK šį objektą savo script.js faile
+
+const ALL_TOKENS_CONFIG = {
+    // PATAISYTOS NUORODOS Į STEPN ŽETONUS
+    'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/18069.png' },
+    'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/31191.png' },
+    'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/16353.png' },
+    
+    // LIKUSIOS NUORODOS
+    'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
+    'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
+    'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
+    'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png' },
+    'bnb':  { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png' },
+    'eth':  { key: 'eth', symbol: 'ETH', apiId: 'ethereum', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' }
+};
     
     const CATEGORIES = {
         go: {
