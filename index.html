@@ -24,8 +24,14 @@
             <div id="tab-content-logger" class="tab-content active">
                 <h2 class="text-xl font-semibold mb-4">Naujas įrašas</h2>
                 <form id="logForm">
-                    <div class="grid-2-cols"><div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div><div class="input-group"><label for="logType">Tipas</label><select id="logType" required><option value="income">Pajamos</option><option value="expense">Išlaidos</option></select></div></div>
-                    <div class="input-group"><label for="logCategory">Kategorija</label><select id="logCategory" required></select></div>
+                    <div class="grid-2-cols"><div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div><div class="input-group"><label for="logType">Tipas</label><select id="logType" required>
+    <option value="" disabled selected>Pasirinkti</option>
+    <option value="expense">Išlaidos</option>
+    <option value="income">Pajamos</option>
+</select></div></div>
+                    <div class="input-group"><label for="logCategory">Kategorija</label><select id="logCategory" required>
+    <option value="" disabled selected>Pasirinkite</option>
+</select></select></div>
                     <div id="standardFields"><div class="grid-2-cols"><div class="input-group"><label>Žetonas</label><div id="logTokenRadioGroup" class="radio-group"></div></div><div class="input-group"><label for="logTokenAmount">Suma (žetonais)</label><input type="number" id="logTokenAmount" step="any" placeholder="Kiekis"></div></div></div>
                     <div id="editFields" class="hidden grid-2-cols"><div class="input-group"><label for="editRateUsd">Kursas (USD)</label><input type="number" id="editRateUsd" step="any"></div><div class="input-group"><label for="editAmountUsd">Suma (USD)</label><input type="number" id="editAmountUsd" step="any"></div></div>
                     <div id="mintingFields" class="hidden"><div class="grid-2-cols"><div class="input-group"><label for="mintGgtAmount">GGT Suma</label><input type="number" id="mintGgtAmount" step="any" placeholder="GGT kiekis"></div><div class="input-group"><label for="mintGmtAmount">GMT Suma</label><input type="number" id="mintGmtAmount" step="any" placeholder="GMT kiekis"></div></div></div>
