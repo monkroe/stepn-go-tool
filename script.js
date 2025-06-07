@@ -47,15 +47,13 @@
         await fetchLiveTokenPrices(true);
         await loadAndRenderLogTable();
         resetLogForm();
-        loadConverterScript(); 
-    }
-
-    function loadConverterScript() {
-        if (document.querySelector('script[src="converter.js"]')) return;
-        const script = document.createElement('script');
-        script.src = 'converter.js';
-        script.defer = true;
-        document.body.appendChild(script);
+        // Konverterio scenarijų įkelsime po to, kai bus gauti pradiniai duomenys
+        if (!document.querySelector('script[src="converter.js"]')) {
+            const script = document.createElement('script');
+            script.src = 'converter.js';
+            script.defer = true;
+            document.body.appendChild(script);
+        }
     }
 
     function cacheDOMElements() {
@@ -154,7 +152,11 @@
         const date = elements.logDate.value;
         const type = elements.logType.value;
         let description = elements.logDescription.value.trim();
-        if (!category) throw new Error("Prašome pasirinkti kategoriją.");
+
+        if (!type || !category) {
+            throw new Error("Prašome pasirinkti tipą ir kategoriją.");
+        }
+
         const commonData = { date, type, category, description: '' };
         let operations = []; 
         if (platform === 'go' && category === 'Level-up') {
@@ -181,8 +183,13 @@
             if (isNaN(tokenAmount) || tokenAmount <= 0) throw new Error("Prašome įvesti teigiamą sumą.");
             operations.push({ ...commonData, tokenKey: selectedTokenRadio.value, tokenAmount });
         }
-        if (operations.length === 0) throw new Error("Neįvesta jokia suma arba visos sumos lygios nuliui.");
+        
+        if (operations.length === 0) {
+            throw new Error("Neįvesta jokia suma arba visos sumos lygios nuliui.");
+        }
+        
         if(operations.length > 0) operations[0].description = description;
+
         for (const op of operations) {
             await createSingleLogEntry(op);
         }
@@ -192,11 +199,14 @@
         if (elements.logForm) {
             elements.logForm.reset();
             elements.platform.value = 'go';
-            elements.logType.value = "expense";
+            // Pataisymas: Nustatom tipą į pradinę tuščią reikšmę
+            elements.logType.value = ""; 
             updateDynamicForm();
+            
             const today = new Date();
             today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
             elements.logDate.value = today.toISOString().split('T')[0];
+            
             elements.logSubmitBtn.textContent = 'Pridėti įrašą';
             elements.logSubmitBtn.disabled = false;
         }
@@ -205,7 +215,16 @@
     async function createSingleLogEntry(entryData) {
          elements.logSubmitBtn.textContent = `Išsaugoma ${entryData.tokenKey.toUpperCase()}...`;
          const rate_usd = await getPriceForDate(entryData.tokenKey, entryData.date);
-         const record = { date: entryData.date, type: entryData.type, token: entryData.tokenKey, token_amount: entryData.tokenAmount, category: entryData.category, description: entryData.description, rate_usd, platform: elements.platform.value };
+         const record = { 
+             date: entryData.date, 
+             type: entryData.type, 
+             token: entryData.tokenKey, 
+             token_amount: entryData.tokenAmount, 
+             category: entryData.category, 
+             description: entryData.description, 
+             rate_usd,
+             platform: elements.platform.value
+            };
          const { error } = await supabase.from('transactions').insert([record]).select();
          if (error) throw error;
     }
@@ -215,6 +234,7 @@
         if (!target) return;
         const row = target.closest('tr');
         if (!row || !row.dataset.id) return;
+        
         const entryId = parseInt(row.dataset.id);
         if (target.matches('.btn-delete')) {
             if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
