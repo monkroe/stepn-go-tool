@@ -60,18 +60,16 @@
     }
 
     function bindEventListeners() {
-        elements['tab-btn-logger'].addEventListener('click', () => switchTab('logger'));
-        elements['tab-btn-converter'].addEventListener('click', () => switchTab('converter'));
-        elements.logForm.addEventListener('submit', handleLogSubmit);
-        elements.logTableBody.addEventListener('click', handleLogTableClick);
-        
         elements.platform.addEventListener('change', updateDynamicForm);
         elements.logType.addEventListener('change', updateDynamicForm);
         elements.logCategory.addEventListener('change', updateDynamicForm);
         
+        elements.logForm.addEventListener('submit', handleLogSubmit);
+        elements.logTableBody.addEventListener('click', handleLogTableClick);
         elements.filterBtn.addEventListener('click', loadAndRenderLogTable);
+        elements['tab-btn-logger'].addEventListener('click', () => switchTab('logger'));
+        elements['tab-btn-converter'].addEventListener('click', () => switchTab('converter'));
 
-        // Konverterio event listeneriai
         if (elements['converter-grid']) {
             elements['converter-grid'].addEventListener('input', handleConverterInput);
             elements['converter-grid'].addEventListener('click', handleConverterClick);
@@ -118,7 +116,7 @@
             elements.ogLevelUpFields.classList.remove('hidden');
         } else if (platform === 'og' && category === 'Minting') {
             elements.ogMintFields.classList.remove('hidden');
-        } else if (category) { // Rodo standartinius laukus, jei pasirinkta bet kokia kita kategorija
+        } else if (category) {
             elements.standardFields.classList.remove('hidden');
             updateTokenRadioButtons(platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc']);
         }
@@ -138,7 +136,7 @@
         elements.logSubmitBtn.textContent = 'Apdorojama...';
         try {
             await handleCreate();
-            await loadAndRenderLogTable(); // Perkrauna lentelę po sėkmingo sukūrimo
+            await loadAndRenderLogTable();
         } catch (error) {
             console.error("Submit error:", error);
             alert(`Įvyko klaida: ${error.message}`);
@@ -313,16 +311,15 @@
     }
     
     function populateFilterDropdowns(data) {
+        if (!elements.filterToken) return;
         const uniqueTokens = [...new Set(data.map(item => item.token))];
         let optionsHTML = '<option value="">Visi</option>';
         uniqueTokens.sort().forEach(token => {
             optionsHTML += `<option value="${token}">${token.toUpperCase()}</option>`;
         });
-        if (elements.filterToken) {
-            const currentValue = elements.filterToken.value;
-            elements.filterToken.innerHTML = optionsHTML;
-            elements.filterToken.value = currentValue;
-        }
+        const currentValue = elements.filterToken.value;
+        elements.filterToken.innerHTML = optionsHTML;
+        elements.filterToken.value = currentValue;
     }
 
     function renderLogTable(data) {
