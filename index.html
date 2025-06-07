@@ -16,6 +16,11 @@
             <button id="tab-btn-logger" class="tab-button active" data-tab="logger">Pajamų/Išlaidų Registratorius</button>
             <button id="tab-btn-converter" class="tab-button" data-tab="converter">Žetonų Kainos</button>
         </nav>
+        <div class="text-center my-4">
+  <button id="login-btn" class="primary-btn">Prisijungti per Google</button>
+  <button id="logout-btn" class="primary-btn hidden">Atsijungti</button>
+  <p id="user-email" class="text-sm mt-2 text-gray-400"></p>
+        </div>
         <main>
             <div id="tab-content-logger" class="tab-content active">
                 <h2 class="text-xl font-semibold mb-4">Naujas įrašas</h2>
@@ -90,5 +95,7 @@
 
     <script src="script.js" defer></script>
     <script src="converter.js" defer></script>
+    <script src="js/supabase.js" defer></script>
+    <script src="js/auth.js" defer></script>
 </body>
 </html>
