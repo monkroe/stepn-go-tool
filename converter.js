@@ -40,13 +40,16 @@
     function generateConverterCards() {
         if (!elements['converter-grid']) return;
         const tokenKeys = Object.keys(ALL_TOKENS_CONFIG);
-        const tokensToDisplay = [ { key: 'usd', symbol: 'USD', apiId: 'usd', fixedPrice: 1.0 }, ...tokenKeys.map(k => ALL_TOKENS_CONFIG[k]).filter(t => t)];
+        const tokensToDisplay = [ { key: 'usd', symbol: 'USD', apiId: 'usd', fixedPrice: 1.0, logo: 'https://cdn-icons-png.flaticon.com/512/25/25473.png' }, ...tokenKeys.map(k => ALL_TOKENS_CONFIG[k]).filter(t => t)];
         let html = '';
         tokensToDisplay.forEach(token => {
             html += `
                 <div class="converter-card" id="card-${token.apiId}">
                     <div class="converter-card-header">
-                        <span class="converter-card-title">${token.symbol}</span>
+                        <span class="converter-card-title">
+                            <img src="${token.logo}" alt="${token.symbol}" class="token-logo">
+                            ${token.symbol}
+                        </span>
                         <button class="converter-card-update-btn" data-api-id="${token.apiId}">Atnaujinti</button>
                     </div>
                     <div class="converter-card-price-wrapper">
@@ -130,7 +133,6 @@
         }
     }
     
-    // Pakeista įkėlimo tvarka: laukiam, kol pagrindinis script.js paruoš duomenis
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initConverter);
     } else {
