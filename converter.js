@@ -1,13 +1,14 @@
-// Failas: converter.js
+// Failas: converter.js (Atsakingas tik už konverterį)
 (function() {
     'use strict';
 
-    // Konverteriui reikalingi elementai ir bendri duomenys, kuriuos nustatys pagrindinis script.js
     let elements = {};
     let liveTokenPrices, ALL_TOKENS_CONFIG;
 
+    window.appActions = window.appActions || {};
+    window.appActions.updateConverterUI = updateConverterPricesUI;
+
     function initConverter() {
-        // Laukiam, kol pagrindinis script.js paruoš bendrus duomenis
         if (window.appData && window.appData.tokens && window.appData.prices) {
             ALL_TOKENS_CONFIG = window.appData.tokens;
             liveTokenPrices = window.appData.prices;
@@ -16,7 +17,6 @@
             generateConverterCards();
             updateConverterPricesUI();
         } else {
-            // Jei duomenų dar nėra, bandome po akimirkos vėl
             setTimeout(initConverter, 100);
         }
     }
@@ -68,6 +68,7 @@
     }
     
     function updateConverterPricesUI() {
+         liveTokenPrices = window.appData.prices;
          document.querySelectorAll('.converter-card').forEach(card => {
             const apiId = card.id.replace('card-', '');
             const priceData = liveTokenPrices[apiId];
@@ -124,14 +125,12 @@
                 event.target.textContent = '...';
                 await window.appActions.fetchPrices(false, apiId);
                 event.target.textContent = 'Atnaujinti';
-                
-                // Atnaujinam UI su naujausiomis kainomis iš globalaus objekto
-                liveTokenPrices = window.appData.prices;
                 updateConverterPricesUI();
             }
         }
     }
-
-    document.addEventListener('DOMContentLoaded', initConverter);
+    
+    // Šis scenarijus laukia, kol bus įkeltas pagrindinis `script.js` ir `DOMContentLoaded`
+    initConverter();
 
 })();
