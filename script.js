@@ -1,26 +1,22 @@
-// Failas: script.js (Versija su platformų logika ir logotipais)
+// Failas: script.js (Versija su integruotais vartotojo ID pataisymais)
 (function() {
     'use strict';
+    // JŪSŲ SUPABASE RAKTAI (palikite savo, aš pakeičiau į pavyzdinius)
     const SUPABASE_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpvamh1cmh3bWNlb3F4a2F0dmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNjYxNDYsImV4cCI6MjA2NDc0MjE0Nn0.NFGhQc7H95U9vOaM7OVxNUgTuXSughz8ZuxaCLfbfQE';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-// Atnaujinkite TIK šį objektą savo script.js faile
-
-const ALL_TOKENS_CONFIG = {
-    // PATAISYTOS IR PATIKRINTOS NUORODOS
-    'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/18069.png' },
-    'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/31191.png' },
-    'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/16353.png' },
-    
-    // LIKUSIOS NUORODOS, KURIOS VEIKIA
-    'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
-    'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
-    'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
-    'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png' },
-    'bnb':  { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png' },
-    'eth':  { key: 'eth', symbol: 'ETH', apiId: 'ethereum', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' }
-};
+    const ALL_TOKENS_CONFIG = {
+        'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', historyApiId: 'stepn', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/18069.png' },
+        'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', historyApiId: 'go-game-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/31191.png' },
+        'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', historyApiId: 'green-satoshi-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/16353.png' },
+        'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', historyApiId: 'solana', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
+        'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', historyApiId: 'usd-coin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png', fixedPrice: 1.0 },
+        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
+        'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', historyApiId: 'tether', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png', fixedPrice: 1.0 },
+        'bnb':  { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', historyApiId: 'binancecoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png' },
+        'eth':  { key: 'eth', symbol: 'ETH', apiId: 'ethereum', historyApiId: 'ethereum', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' }
+    };
     
     const CATEGORIES = {
         go: {
@@ -214,6 +210,8 @@ const ALL_TOKENS_CONFIG = {
             elements.logSubmitBtn.textContent = 'Gaunamas kursas...';
             record.rate_usd = await getPriceForDate(record.token, record.date);
         }
+        // Atnaujinimo funkcijai nereikia siųsti user_id, nes RLS taisyklė
+        // pati patikrins ar vartotojas turi teisę redaguoti šį įrašą.
         const { error } = await supabase.from('transactions').update(record).eq('id', id);
         if (error) throw error;
     }
@@ -234,11 +232,31 @@ const ALL_TOKENS_CONFIG = {
         }
     }
     
+    // ==========================================================
+    // === PATAISYMAS Nr. 1: Pridedamas user_id kūrimo metu ===
+    // ==========================================================
     async function createSingleLogEntry(entryData) {
+         // 1. Gauname prisijungusį vartotoją
+         const { data: { user } } = await supabase.auth.getUser();
+         if (!user) throw new Error("Vartotojas neprisijungęs. Prašome prisijungti iš naujo.");
+
          elements.logSubmitBtn.textContent = `Išsaugoma ${entryData.tokenKey.toUpperCase()}...`;
          const rate_usd = await getPriceForDate(entryData.tokenKey, entryData.date);
-         const record = { date: entryData.date, type: entryData.type, token: entryData.tokenKey, token_amount: entryData.tokenAmount, category: entryData.category, description: entryData.description, rate_usd, platform: elements.platform.value };
-         const { error } = await supabase.from('transactions').insert([record]).select();
+         
+         const record = {
+             date: entryData.date,
+             type: entryData.type,
+             token: entryData.tokenKey,
+             token_amount: entryData.tokenAmount,
+             category: entryData.category,
+             description: entryData.description,
+             rate_usd,
+             platform: elements.platform.value,
+             // 2. PRIDEDAME VARTOTOJO ID!
+             user_id: user.id
+         };
+         
+         const { error } = await supabase.from('transactions').insert(record).select();
          if (error) throw error;
     }
     
@@ -336,8 +354,26 @@ const ALL_TOKENS_CONFIG = {
         }
     }
 
+    // ===================================================================
+    // === PATAISYMAS Nr. 2: Įrašų rodymas filtruojamas pagal user_id ===
+    // ===================================================================
     async function loadAndRenderLogTable() {
+        // 1. Gauname prisijungusį vartotoją
+        const { data: { user } } = await supabase.auth.getUser();
+
+        // 2. Jei vartotojas neprisijungęs, rodome tuščią lentelę
+        if (!user) {
+            renderLogTable([]);
+            populateFilterDropdowns([]);
+            return;
+        }
+
         let query = supabase.from('transactions').select('*');
+
+        // 3. FILTRUOJAME PAGAL VARTOTOJO ID!
+        query = query.eq('user_id', user.id);
+
+        // Likusi filtravimo logika
         if (elements.filterStartDate && elements.filterStartDate.value) query = query.gte('date', elements.filterStartDate.value);
         if (elements.filterEndDate && elements.filterEndDate.value) query = query.lte('date', elements.filterEndDate.value);
         const filterTokenValue = elements.filterToken ? elements.filterToken.value : "";
@@ -345,8 +381,10 @@ const ALL_TOKENS_CONFIG = {
         const sortOrder = elements.filterOrder ? elements.filterOrder.value === 'asc' : true;
         const sortBy = elements.filterSort ? elements.filterSort.value : 'date';
         query = query.order(sortBy, { ascending: sortOrder }).order('id', { ascending: false });
+        
         const { data, error } = await query;
         if (error) { console.error('Klaida gaunant duomenis:', error); return; }
+        
         renderLogTable(data);
         populateFilterDropdowns(data);
     }
