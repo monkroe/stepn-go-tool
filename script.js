@@ -193,16 +193,15 @@
         elements.filterToken.innerHTML = '<option value="">Visi</option>' + LOGGER_TOKEN_KEYS.map(key => `<option value="${key}">${ALL_TOKENS_CONFIG[key].symbol}</option>`).join('');
     }
 
-    // ========================================================
-    // KRITINIS PATAISYMAS ČIA
-    // ========================================================
+    // PATAISYTA FUNKCIJA, KAD VEIKTŲ SU ATSKIRAIS FAILAIS
     function updateCategoryDropdown() {
         const type = elements.logType.value;
         const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
         
-        // Ši eilutė apsaugo kodą nuo "užlūžimo" pradinio krovimo metu.
-        // Jei radio mygtukai dar neegzistuoja, funkcija tiesiog nieko nedaro.
-        if (!selectedTokenRadio) return; 
+        // Apsauga, neleidžianti kodui "lūžti" kol elementai dar nesukurti
+        if (!selectedTokenRadio) {
+            return; 
+        }
         
         const selectedToken = selectedTokenRadio.value;
         let categories = CATEGORIES[type] || {};
@@ -216,12 +215,11 @@
         }
         const currentCategory = elements.logCategory.value;
         elements.logCategory.innerHTML = Object.entries(categories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
-        if (categories[currentCategory]) { elements.logCategory.value = currentCategory; }
+        if (categories[currentCategory]) { 
+            elements.logCategory.value = currentCategory; 
+        }
         handleCategoryChange();
     }
-    // ========================================================
-    // PATAISYMO PABAIGA
-    // ========================================================
 
     function handleCategoryChange() {
         const category = elements.logCategory.value;
@@ -232,7 +230,9 @@
         }
     }
     
-    function handleTokenChange() { updateCategoryDropdown(); }
+    function handleTokenChange() { 
+        updateCategoryDropdown(); 
+    }
     
     function generateConverterCards() {
         const allTokens = [ { key: 'usd', symbol: 'USD', apiId: 'usd', fixedPrice: 1.0 }, ...Object.values(ALL_TOKENS_CONFIG) ].filter((v,i,a)=>a.findIndex(t=>(t.apiId === v.apiId))===i); 
@@ -360,8 +360,6 @@
          });
     }
     
+    // Ši eilutė užtikrina, kad 'init' funkcija bus iškviesta tik po to, kai visas HTML bus užkrautas.
     document.addEventListener('DOMContentLoaded', init);
 })();
-</script>
-</body>
-</html>
