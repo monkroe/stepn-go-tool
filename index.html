@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEPN GO Įrankis</title>
+    
+    <!-- Išoriniai resursai -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Nuosavas stiliaus failas -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Pranešimų blokas klaidoms ir sėkmės pranešimams -->
+    <div id="notification-banner" class="notification hidden"></div>
+
+    <main class="container">
+        <header>
+            <h1 class="text-2xl font-bold text-center mb-6">STEPN GO Įrankis</h1>
+            <nav class="flex space-x-2 sm:space-x-4 border-b border-gray-700 pb-2 mb-4">
+                <button id="tab-btn-logger" class="tab-button active" data-tab="logger">Pajamų/Išlaidų Registratorius</button>
+                <button id="tab-btn-converter" class="tab-button" data-tab="converter">Žetonų Kainos</button>
+            </nav>
+        </header>
+
+        <!-- Registratoriaus skiltis -->
+        <div id="tab-content-logger" class="tab-content active">
+            <section aria-labelledby="form-title">
+                <h2 id="form-title" class="text-xl font-semibold mb-4">Naujas įrašas</h2>
+                <form id="logForm">
+                    <input type="hidden" id="editingId">
+                    <div class="grid-2-cols">
+                        <div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div>
+                        <div class="input-group"><label for="logType">Tipas</label><select id="logType" required><option value="income">Pajamos</option><option value="expense">Išlaidos</option></select></div>
+                    </div>
+                    <div class="input-group"><label for="logCategory">Kategorija</label><select id="logCategory" required></select></div>
+                    
+                    <div id="standardFields"><div class="grid-2-cols"><div class="input-group"><label>Žetonas</label><div id="logTokenRadioGroup" class="radio-group"></div></div><div class="input-group"><label for="logTokenAmount">Suma (žetonais)</label><input type="number" id="logTokenAmount" step="any" placeholder="Kiekis"></div></div></div>
+                    <div id="editFields" class="hidden grid-2-cols"><div class="input-group"><label for="editRateUsd">Kursas (USD)</label><input type="number" id="editRateUsd" step="any"></div><div class="input-group"><label for="editAmountUsd">Suma (USD)</label><input type="number" id="editAmountUsd" step="any"></div></div>
+                    <div id="mintingFields" class="hidden"><div class="grid-2-cols"><div class="input-group"><label for="mintGgtAmount">GGT Suma</label><input type="number" id="mintGgtAmount" step="any" placeholder="GGT kiekis"></div><div class="input-group"><label for="mintGmtAmount">GMT Suma</label><input type="number" id="mintGmtAmount" step="any" placeholder="GMT kiekis"></div></div></div>
+                    
+                    <div class="input-group mt-4"><label for="logDescription">Aprašymas (nebūtina)</label><input type="text" id="logDescription" placeholder="pvz., Parduotas 'Jogger'"></div>
+                    <button id="logSubmitBtn" type="submit" class="primary-btn">Pridėti įrašą</button>
+                </form>
+            </section>
+            
+            <hr class="my-8 border-gray-700">
+            
+            <section aria-labelledby="transactions-title">
+                <h2 id="transactions-title" class="text-xl font-semibold mb-4">Transakcijų valdymas</h2>
+                <div class="filter-section">
+                    <div class="input-group"><label for="filterStartDate">Nuo</label><input type="date" id="filterStartDate"></div>
+                    <div class="input-group"><label for="filterEndDate">Iki</label><input type="date" id="filterEndDate"></div>
+                    <div class="input-group"><label for="filterToken">Žetonas</label><select id="filterToken"><option value="">Visi</option></select></div>
+                    <div class="input-group"><label for="filterSort">Rikiuoti pagal</label><select id="filterSort"><option value="date">Data</option><option value="token_amount">Suma</option><option value="rate_usd">Kursas</option></select></div>
+                    <div class="input-group"><label for="filterOrder">Tvarka</label><select id="filterOrder"><option value="desc">Mažėjančia</option><option value="asc">Didėjančia</option></select></div>
+                    <button id="filterBtn" class="primary-btn h-10">Filtruoti</button>
+                </div>
+                <h3 class="text-xl font-semibold my-4">Transakcijų sąrašas</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead><tr><th>Data</th><th>Tipas</th><th>Žetonas</th><th>Suma</th><th>Kursas (USD)</th><th>Suma (USD)</th><th>Aprašymas</th><th>Veiksmai</th></tr></thead>
+                        <tbody id="logTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="summaryContainer" class="summary-section"></div>
+            </section>
+        </div>
+
+        <!-- Konverterio skiltis -->
+        <div id="tab-content-converter" class="tab-content">
+            <section aria-labelledby="converter-title">
+                <h2 id="converter-title" class="text-xl font-semibold mb-4">Kriptovaliutų konverteris</h2>
+                <div id="converter-grid" class="converter-grid"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Nuosavas JavaScript failas -->
+    <script src="script.js" defer></script>
+</body>
+</html>

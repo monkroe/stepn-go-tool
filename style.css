@@ -1,0 +1,304 @@
+/* Failas: style.css */
+/* Pagrindiniai stiliai, kurie papildo Tailwind CSS */
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    background-color: #111827; 
+    color: #d1d5db; 
+}
+.container { 
+    max-width: 800px; 
+    margin: 1rem auto; 
+    padding: 1.5rem; 
+    background-color: #1f2937; 
+    border-radius: 0.75rem; 
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); 
+}
+.tab-button { 
+    padding: 0.5rem 1rem; 
+    border-radius: 0.375rem; 
+    font-weight: 500; 
+    cursor: pointer; 
+    transition: background-color 0.2s, color 0.2s; 
+    border: 1px solid transparent; 
+}
+.tab-button.active { 
+    background-color: #4f46e5; 
+    color: white; 
+}
+.tab-button:not(.active) { 
+    color: #9ca3af; 
+    background-color: #374151; 
+}
+.tab-content { 
+    display: none; 
+    margin-top: 1.5rem; 
+}
+.tab-content.active { 
+    display: block; 
+}
+.input-group { 
+    margin-bottom: 1rem; 
+}
+label { 
+    display: block; 
+    margin-bottom: 0.25rem; 
+    font-weight: 500; 
+    color: #9ca3af; 
+    font-size: 0.875rem; 
+}
+input, select { 
+    width: 100%; 
+    padding: 0.625rem; 
+    background-color: #374151; 
+    border: 1px solid #4b5563; 
+    color: #f3f4f6; 
+    border-radius: 0.375rem; 
+    box-sizing: border-box; 
+    font-size: 0.875rem; 
+}
+input:focus, select:focus { 
+    outline: none; 
+    border-color: #4f46e5; 
+}
+input:disabled { 
+    background-color: #2b3341; 
+    cursor: not-allowed; 
+}
+.grid-2-cols { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+    gap: 1rem; 
+}
+button.primary-btn { 
+    width: 100%; 
+    padding: 0.75rem; 
+    background-color: #4f46e5; 
+    color: white; 
+    font-weight: 600; 
+    border-radius: 0.375rem; 
+    cursor: pointer; 
+    transition: background-color 0.2s; 
+}
+button.primary-btn:hover { 
+    background-color: #4338ca; 
+}
+button.primary-btn:disabled { 
+    background-color: #374151; 
+    cursor: not-allowed; 
+}
+table { 
+    width: 100%; 
+    margin-top: 1rem; 
+    border-collapse: collapse; 
+}
+th, td { 
+    text-align: left; 
+    padding: 0.75rem; 
+    font-size: 0.875rem; 
+    vertical-align: middle; 
+    border-bottom: 1px solid #4b5563; 
+}
+th { 
+    background-color: #1f2937; 
+    font-weight: 600; 
+    white-space: nowrap; 
+}
+td.date-cell { 
+    white-space: nowrap; 
+}
+tr:last-child td { 
+    border-bottom: none; 
+}
+.log-table-actions button { 
+    display: block; 
+    width: 100%; 
+    padding: 0.25rem 0.5rem; 
+    font-size: 0.75rem; 
+    border-radius: 0.25rem; 
+    cursor: pointer; 
+    margin-bottom: 0.25rem; 
+}
+.btn-edit { 
+    background-color: #3b82f6; 
+    color: white; 
+}
+.btn-delete { 
+    background-color: #ef4444; 
+    color: white; 
+}
+.hidden { 
+    display: none; 
+}
+.radio-group { 
+    border: 1px solid #4b5563; 
+    border-radius: 0.375rem; 
+    overflow: hidden; 
+}
+.radio-label { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    padding: 0.625rem; 
+    background-color: #374151; 
+    border-bottom: 1px solid #4b5563; 
+    cursor: pointer; 
+}
+.radio-label span:first-child { 
+    display: flex; 
+    align-items: center; 
+    gap: 0.75rem; 
+}
+.radio-label .token-icon { 
+    width: 24px; 
+    height: 24px; 
+}
+.radio-label:last-child { 
+    border-bottom: none; 
+}
+.radio-label input[type="radio"] { 
+    opacity: 0; 
+    width: 0; 
+    height: 0; 
+    position: absolute; 
+}
+.radio-custom-dot { 
+    width: 1.25rem; 
+    height: 1.25rem; 
+    border-radius: 50%; 
+    border: 2px solid #6b7280; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    transition: border-color 0.2s; 
+}
+.radio-custom-dot::after { 
+    content: ''; 
+    width: 0.625rem; 
+    height: 0.625rem; 
+    border-radius: 50%; 
+    background-color: #4f46e5; 
+    transform: scale(0); 
+    transition: transform 0.2s; 
+}
+.radio-label input[type="radio"]:checked + .radio-custom-dot { 
+    border-color: #4f46e5; 
+}
+.radio-label input[type="radio"]:checked + .radio-custom-dot::after { 
+    transform: scale(1); 
+}
+.radio-label:hover .radio-custom-dot { 
+    border-color: #9ca3af; 
+}
+.summary-section { 
+    margin-top: 1.5rem; 
+    padding: 1rem; 
+    background-color: #111827; 
+    border-radius: 0.5rem; 
+}
+.summary-row { 
+    display: flex; 
+    justify-content: space-between; 
+    padding: 0.25rem 0; 
+    font-size: 0.875rem; 
+    align-items: center; 
+}
+.summary-label { 
+    color: #9ca3af; 
+}
+.summary-value { 
+    font-weight: 600; 
+}
+.income-color { 
+    color: #34d399; 
+}
+.expense-color { 
+    color: #f87171; 
+}
+.btc-value { 
+    font-size: 0.75rem; 
+    color: #9ca3af; 
+    display: flex; 
+    align-items: center; 
+    gap: 0.25rem; 
+}
+.converter-grid { 
+    display: grid; 
+    grid-template-columns: 1fr; 
+    gap: 1rem; 
+}
+@media (min-width: 640px) { 
+    .converter-grid { grid-template-columns: repeat(2, 1fr); } 
+}
+.converter-card { 
+    background-color: #374151; 
+    padding: 1rem; 
+    border-radius: 0.5rem; 
+}
+.converter-card-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 0.75rem; 
+}
+.converter-card-title { 
+    font-weight: 600; 
+}
+.converter-card-update-btn { 
+    font-size: 0.75rem; 
+    padding: 0.25rem 0.5rem; 
+    background-color: #4f46e5; 
+    color: white; 
+    border-radius: 0.25rem; 
+}
+.converter-card-price-wrapper { 
+    display: flex; 
+    align-items: baseline; 
+    gap: 0.5rem; 
+    margin-bottom: 0.5rem; 
+}
+.converter-card-price { 
+    font-size: 1.25rem; 
+    font-weight: 700; 
+}
+.price-change { 
+    font-size: 0.875rem; 
+    font-weight: 500; 
+}
+.price-up { color: #34d399; }
+.price-down { color: #f87171; }
+.converter-card .update-time { 
+    font-size: 0.75rem; 
+    color: #6b7280; 
+    margin-top: 0.5rem; 
+}
+.filter-section { 
+    background-color: #111827; 
+    padding: 1rem; 
+    border-radius: 0.5rem; 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+    gap: 1rem; 
+    align-items: end; 
+}
+
+/* Pranešimų blokas */
+.notification {
+    padding: 1rem;
+    margin: 1rem auto;
+    max-width: 800px;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: 500;
+    text-align: center;
+    transition: opacity 0.3s ease;
+}
+.notification.error {
+    background-color: #ef4444;
+}
+.notification.success {
+    background-color: #22c55e;
+}
+.notification.info {
+    background-color: #3b82f6;
+}
