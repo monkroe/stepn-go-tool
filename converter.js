@@ -1,4 +1,4 @@
-// Failas: converter.js (Atsakingas tik už konverterį)
+// Failas: converter.js
 (function() {
     'use strict';
 
@@ -130,7 +130,11 @@
         }
     }
     
-    // Šis scenarijus laukia, kol bus įkeltas pagrindinis `script.js` ir `DOMContentLoaded`
-    initConverter();
+    // Pakeista įkėlimo tvarka: laukiam, kol pagrindinis script.js paruoš duomenis
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initConverter);
+    } else {
+        initConverter();
+    }
 
 })();
