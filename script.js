@@ -76,7 +76,15 @@
     }
     
     async function handleCreate() {
-        const category = elements.logCategory.value, date = elements.logDate.value, type = elements.logType.value, description = elements.logDescription.value.trim();
+        const category = elements.logCategory.value;
+        const date = elements.logDate.value;
+        const type = elements.logType.value;
+        const description = elements.logDescription.value.trim();
+
+        if (!type || !category) {
+            throw new Error("Prašome pasirinkti tipą ir kategoriją.");
+        }
+
         if (category === 'Minting') {
             const ggtAmount = parseFloat(elements.mintGgtAmount.value) || 0;
             const gmtAmount = parseFloat(elements.mintGmtAmount.value) || 0;
@@ -166,9 +174,14 @@
         const today = new Date();
         today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
         elements.logDate.value = today.toISOString().split('T')[0];
-        updateCategoryDropdown();
-        handleCategoryChange();
-        if(document.querySelector('input[name="logToken"]')) { document.querySelector('input[name="logToken"]').checked = true; }
+        
+        // Atstatome pradinę būseną
+        elements.logType.value = ""; 
+        updateCategoryDropdown(); 
+        
+        if(document.querySelector('input[name="logToken"]')) { 
+            document.querySelector('input[name="logToken"]').checked = true; 
+        }
         elements.logSubmitBtn.textContent = 'Pridėti įrašą';
         elements.logSubmitBtn.style.backgroundColor = '';
         elements.logSubmitBtn.disabled = false;
@@ -193,14 +206,18 @@
         elements.filterToken.innerHTML = '<option value="">Visi</option>' + LOGGER_TOKEN_KEYS.map(key => `<option value="${key}">${ALL_TOKENS_CONFIG[key].symbol}</option>`).join('');
     }
 
-    // PATAISYTA FUNKCIJA, KAD VEIKTŲ SU ATSKIRAIS FAILAIS
+    // PATAISYTA FUNKCIJA, PRITAIKYTA PRIE NAUJO HTML
     function updateCategoryDropdown() {
         const type = elements.logType.value;
         const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
         
-        // Apsauga, neleidžianti kodui "lūžti" kol elementai dar nesukurti
-        if (!selectedTokenRadio) {
-            return; 
+        if (!selectedTokenRadio) return; 
+
+        // Jei tipas nepasirinktas (rodomas placeholderis), atstatome kategoriją
+        if (!type) {
+            elements.logCategory.innerHTML = `<option value="" disabled selected>Pasirinkite</option>`;
+            handleCategoryChange();
+            return;
         }
         
         const selectedToken = selectedTokenRadio.value;
@@ -213,8 +230,11 @@
                 return true;
             }));
         }
+        
         const currentCategory = elements.logCategory.value;
-        elements.logCategory.innerHTML = Object.entries(categories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
+        elements.logCategory.innerHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>` +
+            Object.entries(categories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
+            
         if (categories[currentCategory]) { 
             elements.logCategory.value = currentCategory; 
         }
@@ -360,6 +380,5 @@
          });
     }
     
-    // Ši eilutė užtikrina, kad 'init' funkcija bus iškviesta tik po to, kai visas HTML bus užkrautas.
     document.addEventListener('DOMContentLoaded', init);
 })();
