@@ -77,21 +77,8 @@
             <div id="tab-content-logger" class="tab-content active">
                 <h2 class="text-xl font-semibold mb-4">Naujas įrašas</h2>
                 <form id="logForm">
-                    <div class="grid-2-cols">
-                        <div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div>
-                        <div class="input-group"><label for="logType">Tipas</label>
-                            <select id="logType" required>
-                                <option value="" disabled selected>Pasirinkite tipą...</option>
-                                <option value="income">Pajamos</option>
-                                <option value="expense">Išlaidos</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="input-group"><label for="logCategory">Kategorija</label>
-                        <select id="logCategory" required>
-                             <option value="" disabled selected>Pirmiausia pasirinkite tipą...</option>
-                        </select>
-                    </div>
+                    <div class="grid-2-cols"><div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div><div class="input-group"><label for="logType">Tipas</label><select id="logType" required><option value="income">Pajamos</option><option value="expense">Išlaidos</option></select></div></div>
+                    <div class="input-group"><label for="logCategory">Kategorija</label><select id="logCategory" required></select></div>
                     <div id="standardFields"><div class="grid-2-cols"><div class="input-group"><label>Žetonas</label><div id="logTokenRadioGroup" class="radio-group"></div></div><div class="input-group"><label for="logTokenAmount">Suma (žetonais)</label><input type="number" id="logTokenAmount" step="any" placeholder="Kiekis"></div></div></div>
                     <div id="editFields" class="hidden grid-2-cols"><div class="input-group"><label for="editRateUsd">Kursas (USD)</label><input type="number" id="editRateUsd" step="any"></div><div class="input-group"><label for="editAmountUsd">Suma (USD)</label><input type="number" id="editAmountUsd" step="any"></div></div>
                     <div id="mintingFields" class="hidden"><div class="grid-2-cols"><div class="input-group"><label for="mintGgtAmount">GGT Suma</label><input type="number" id="mintGgtAmount" step="any" placeholder="GGT kiekis"></div><div class="input-group"><label for="mintGmtAmount">GMT Suma</label><input type="number" id="mintGmtAmount" step="any" placeholder="GMT kiekis"></div></div></div>
@@ -196,15 +183,7 @@
         }
         
         async function handleCreate() {
-            const category = elements.logCategory.value;
-            const date = elements.logDate.value;
-            const type = elements.logType.value;
-            const description = elements.logDescription.value.trim();
-
-            if (!type || !category) {
-                throw new Error("Prašome pasirinkti tipą ir kategoriją.");
-            }
-            
+            const category = elements.logCategory.value, date = elements.logDate.value, type = elements.logType.value, description = elements.logDescription.value.trim();
             if (category === 'Minting') {
                 const ggtAmount = parseFloat(elements.mintGgtAmount.value) || 0;
                 const gmtAmount = parseFloat(elements.mintGmtAmount.value) || 0;
@@ -295,6 +274,7 @@
             today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
             elements.logDate.value = today.toISOString().split('T')[0];
             updateCategoryDropdown();
+            handleCategoryChange();
             if(document.querySelector('input[name="logToken"]')) { document.querySelector('input[name="logToken"]').checked = true; }
             elements.logSubmitBtn.textContent = 'Pridėti įrašą';
             elements.logSubmitBtn.style.backgroundColor = '';
@@ -322,12 +302,6 @@
 
         function updateCategoryDropdown() {
             const type = elements.logType.value;
-            if (!type) {
-                elements.logCategory.innerHTML = `<option value="" disabled selected>Pirmiausia pasirinkite tipą...</option>`;
-                handleCategoryChange();
-                return;
-            }
-            
             const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
             const selectedToken = selectedTokenRadio ? selectedTokenRadio.value : LOGGER_TOKEN_KEYS[0];
             let categories = CATEGORIES[type] || {};
@@ -340,8 +314,7 @@
                 }));
             }
             const currentCategory = elements.logCategory.value;
-            elements.logCategory.innerHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>` +
-                Object.entries(categories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
+            elements.logCategory.innerHTML = Object.entries(categories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
             if (categories[currentCategory]) { elements.logCategory.value = currentCategory; }
             handleCategoryChange();
         }
@@ -462,26 +435,42 @@
             elements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2">Bendra suvestinė (pagal filtrus)</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
         }
 
+        // ===================================================
+        // PATAISYMAS PRASIDEDA ČIA
+        // ===================================================
         function updateConverterPricesUI() {
              document.querySelectorAll('.converter-card').forEach(card => {
                 const apiId = card.id.replace('card-', '');
                 const priceData = liveTokenPrices[apiId];
                 const priceEl = card.querySelector(`#price-${apiId}`);
                 const changeEl = card.querySelector(`#change-${apiId}`);
-                if (priceData && priceData.price) {
+
+                if (priceData && typeof priceData.price !== 'undefined') {
                     priceEl.textContent = `$${priceData.price.toFixed(5)}`;
-                    const change = priceData.change;
+                    
+                    const change = priceData.change || 0;
+                    
+                    changeEl.classList.remove('price-up', 'price-down');
+
                     if (change > 0) {
-                        changeEl.textContent = `+${change.toFixed(2)}%`;
-                        priceEl.classList.add('price-up'); priceEl.classList.remove('price-down');
+                        changeEl.textContent = `▲ +${change.toFixed(2)}%`;
+                        changeEl.classList.add('price-up');
+                    } else if (change < 0) {
+                        changeEl.textContent = `▼ ${change.toFixed(2)}%`;
+                        changeEl.classList.add('price-down');
                     } else {
                         changeEl.textContent = `${change.toFixed(2)}%`;
-                        priceEl.classList.add('price-down'); priceEl.classList.remove('price-up');
                     }
-                } else { priceEl.textContent = 'N/A'; changeEl.textContent = ''; }
+                } else { 
+                    priceEl.textContent = 'N/A'; 
+                    changeEl.textContent = ''; 
+                }
                 card.querySelector(`#time-${apiId}`).textContent = `Atnaujinta: ${new Date().toLocaleTimeString('lt-LT')}`;
              });
         }
+        // ===================================================
+        // PATAISYMO PABAIGA
+        // ===================================================
         
         document.addEventListener('DOMContentLoaded', init);
     })();
