@@ -1,4 +1,4 @@
-// Failas: script.js (Versija su veikiančiu redagavimu)
+// Failas: script.js (Versija su pilnai veikiančiu redagavimu)
 (function() {
     'use strict';
     const SUPABASE_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
@@ -53,9 +53,10 @@
         const ids = [
             'tab-btn-logger', 'tab-btn-converter', 'tab-content-logger', 'tab-content-converter',
             'logForm', 'platform', 'logDate', 'logType', 'logCategory', 'logDescription', 'logSubmitBtn',
-            'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields',
+            'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields',
             'logTokenRadioGroup', 'logTokenAmount',
             'goLevelUpGgt', 'goLevelUpGmt', 'ogLevelUpGst', 'ogLevelUpGmt', 'ogMintGst', 'ogMintGmt', 'ogMintScrolls',
+            'editRateUsd', 'editAmountUsd',
             'logTableBody', 'summaryContainer',
             'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn'
         ];
@@ -71,6 +72,8 @@
         if (elements.logType) elements.logType.addEventListener('change', updateDynamicForm);
         if (elements.logCategory) elements.logCategory.addEventListener('change', updateDynamicForm);
         if (elements.filterBtn) elements.filterBtn.addEventListener('click', loadAndRenderLogTable);
+        if (elements.editRateUsd) elements.editRateUsd.addEventListener('input', () => syncEditInputs('rate'));
+        if (elements.editAmountUsd) elements.editAmountUsd.addEventListener('input', () => syncEditInputs('amount'));
     }
 
     function updateDynamicForm() {
@@ -98,13 +101,14 @@
         if (!elements.platform || !elements.logCategory) return;
         const platform = elements.platform.value;
         const category = elements.logCategory.value;
-        ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields'].forEach(id => {
+        ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields'].forEach(id => {
             if (elements[id]) elements[id].classList.add('hidden');
         });
 
         const isEditing = !!elements.logForm.dataset.editingId;
         if (isEditing) {
             elements.standardFields.classList.remove('hidden');
+            elements.editFields.classList.remove('hidden'); // Rodo redagavimo laukus
             return;
         }
 
@@ -158,8 +162,7 @@
         const type = elements.logType.value;
         let description = elements.logDescription.value.trim();
         if (!type || !category) throw new Error("Prašome pasirinkti tipą ir kategoriją.");
-        
-        const commonData = { date, type, category, description }; // PATAISYMAS: Aprašymas priskiriamas visiems
+        const commonData = { date, type, category, description }; 
         let operations = []; 
         if (platform === 'go' && category === 'Level-up') {
             const ggt = parseFloat(elements.goLevelUpGgt.value) || 0;
@@ -190,7 +193,7 @@
             await createSingleLogEntry(op);
         }
     }
-
+    
     async function handleUpdate(id) {
         const record = {
             date: elements.logDate.value,
@@ -199,14 +202,14 @@
             token_amount: parseFloat(elements.logTokenAmount.value),
             category: elements.logCategory.value,
             description: elements.logDescription.value.trim(),
-            platform: elements.platform.value
+            platform: elements.platform.value,
+            rate_usd: parseFloat(elements.editRateUsd.value)
         };
-        // Kursą atnaujinsime tik jei pasikeitė data arba žetonas
         const oldEntry = JSON.parse(elements.logForm.dataset.oldEntry);
         if (record.date !== oldEntry.date || record.token !== oldEntry.token) {
+            elements.logSubmitBtn.textContent = 'Gaunamas kursas...';
             record.rate_usd = await getPriceForDate(record.token, record.date);
         }
-
         const { error } = await supabase.from('transactions').update(record).eq('id', id);
         if (error) throw error;
     }
@@ -244,8 +247,8 @@
         if (target.matches('.btn-delete')) {
             if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
                 const { error } = await supabase.from('transactions').delete().eq('id', entryId);
-                if (error) { alert(`Klaida trinant: ${error.message}`);
-                } else { await loadAndRenderLogTable(); }
+                if (error) { alert(`Klaida trinant: ${error.message}`); } 
+                else { await loadAndRenderLogTable(); }
             }
         } else if (target.matches('.btn-edit')) {
             const { data, error } = await supabase.from('transactions').select().eq('id', entryId).single();
@@ -262,20 +265,35 @@
         elements.platform.value = entry.platform || 'go';
         elements.logDate.value = entry.date;
         elements.logType.value = entry.type;
-        
         updateDynamicForm();
-        
         elements.logCategory.value = entry.category;
-        updateVisibleFields(); // Reikia iškviesti dar kartą, kad parodytų standartinius laukus
+        updateVisibleFields();
 
-        // Užpildome standartinius laukus
-        updateTokenRadioButtons(entry.platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc']);
-        document.querySelector(`input[name="logToken"][value="${entry.token}"]`).checked = true;
+        const tokensForPlatform = entry.platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc'];
+        updateTokenRadioButtons(tokensForPlatform);
+        
+        const radioToSelect = document.querySelector(`input[name="logToken"][value="${entry.token}"]`);
+        if (radioToSelect) radioToSelect.checked = true;
+
         elements.logTokenAmount.value = entry.token_amount;
         elements.logDescription.value = entry.description;
+        
+        elements.editRateUsd.value = (entry.rate_usd || 0).toFixed(8);
+        elements.editAmountUsd.value = ((entry.rate_usd || 0) * (entry.token_amount || 0)).toFixed(2);
 
         elements.logSubmitBtn.textContent = 'Atnaujinti įrašą';
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function syncEditInputs(source) {
+        const rate = parseFloat(elements.editRateUsd.value);
+        const total = parseFloat(elements.editAmountUsd.value);
+        const amount = parseFloat(elements.logTokenAmount.value);
+        if (source === 'rate' && !isNaN(rate) && !isNaN(amount)) {
+            elements.editAmountUsd.value = (amount * rate).toFixed(2);
+        } else if (source === 'amount' && !isNaN(total) && !isNaN(amount) && amount > 0) {
+            elements.editRateUsd.value = (total / amount).toFixed(8);
+        }
     }
 
     async function getPriceForDate(tokenKey, dateString) {
@@ -299,8 +317,10 @@
 
     async function fetchLiveTokenPrices(fetchAll = false, singleApiId = null) {
         let tokenApiIds;
-        if(fetchAll) { tokenApiIds = Object.values(ALL_TOKENS_CONFIG).map(t => t.apiId).filter(id => id);
-        } else if (singleApiId) { tokenApiIds = [singleApiId]; 
+        if(fetchAll) { 
+            tokenApiIds = Object.values(ALL_TOKENS_CONFIG).map(t => t.apiId).filter(id => id);
+        } else if (singleApiId) { 
+            tokenApiIds = [singleApiId]; 
         } else { return; }
         try {
             const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${[...new Set(tokenApiIds)].join(',')}&vs_currencies=usd&include_24hr_change=true`);
@@ -313,7 +333,9 @@
             if (window.appActions && typeof window.appActions.updateConverterUI === 'function') {
                 window.appActions.updateConverterUI();
             }
-        } catch (error) { console.error("Klaida gaunant realaus laiko kainas:", error); }
+        } catch (error) { 
+            console.error("Klaida gaunant realaus laiko kainas:", error); 
+        }
     }
 
     async function loadAndRenderLogTable() {
