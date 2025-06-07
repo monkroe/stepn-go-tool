@@ -20,11 +20,38 @@
             <div id="tab-content-logger" class="tab-content active">
                 <h2 class="text-xl font-semibold mb-4">Naujas įrašas</h2>
                 <form id="logForm">
-                    <div class="grid-2-cols"><div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div><div class="input-group"><label for="logType">Tipas</label><select id="logType" required><option value="income">Pajamos</option><option value="expense">Išlaidos</option></select></div></div>
-                    <div class="input-group"><label for="logCategory">Kategorija</label><select id="logCategory" required></select></div>
-                    <div id="standardFields"><div class="grid-2-cols"><div class="input-group"><label>Žetonas</label><div id="logTokenRadioGroup" class="radio-group"></div></div><div class="input-group"><label for="logTokenAmount">Suma (žetonais)</label><input type="number" id="logTokenAmount" step="any" placeholder="Kiekis"></div></div></div>
-                    <div id="editFields" class="hidden grid-2-cols"><div class="input-group"><label for="editRateUsd">Kursas (USD)</label><input type="number" id="editRateUsd" step="any"></div><div class="input-group"><label for="editAmountUsd">Suma (USD)</label><input type="number" id="editAmountUsd" step="any"></div></div>
-                    <div id="mintingFields" class="hidden"><div class="grid-2-cols"><div class="input-group"><label for="mintGgtAmount">GGT Suma</label><input type="number" id="mintGgtAmount" step="any" placeholder="GGT kiekis"></div><div class="input-group"><label for="mintGmtAmount">GMT Suma</label><input type="number" id="mintGmtAmount" step="any" placeholder="GMT kiekis"></div></div></div>
+                    <div class="input-group">
+                        <label for="platform">Platforma</label>
+                        <select id="platform" required>
+                            <option value="go">STEPN GO</option>
+                            <option value="og">STEPN OG</option>
+                        </select>
+                    </div>
+
+                    <div class="grid-2-cols">
+                        <div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div>
+                        <div class="input-group"><label for="logType">Tipas</label><select id="logType" required><option value="expense">Išlaidos</option><option value="income">Pajamos</option></select></div>
+                    </div>
+                    <div class="input-group"><label for="logCategory">Kategorija</label><select id="logCategory" required><option value="" disabled selected>Pasirinkite kategoriją...</option></select></div>
+                    
+                    <div id="standardFields" class="hidden"><div class="grid-2-cols"><div class="input-group"><label>Žetonas</label><div id="logTokenRadioGroup" class="radio-group"></div></div><div class="input-group"><label for="logTokenAmount">Suma (žetonais)</label><input type="number" id="logTokenAmount" step="any" placeholder="Kiekis"></div></div></div>
+                    
+                    <div id="goLevelUpFields" class="hidden grid-2-cols">
+                        <div class="input-group"><label for="goLevelUpGgt">GGT Suma</label><input type="number" id="goLevelUpGgt" step="any" placeholder="GGT kiekis"></div>
+                        <div class="input-group"><label for="goLevelUpGmt">GMT Suma</label><input type="number" id="goLevelUpGmt" step="any" placeholder="GMT kiekis"></div>
+                    </div>
+                     <div id="ogLevelUpFields" class="hidden grid-2-cols">
+                        <div class="input-group"><label for="ogLevelUpGst">GST Suma</label><input type="number" id="ogLevelUpGst" step="any" placeholder="GST kiekis"></div>
+                        <div class="input-group"><label for="ogLevelUpGmt">GMT Suma</label><input type="number" id="ogLevelUpGmt" step="any" placeholder="GMT kiekis"></div>
+                    </div>
+                    <div id="ogMintFields" class="hidden">
+                        <div class="grid-2-cols">
+                            <div class="input-group"><label for="ogMintGst">GST Suma</label><input type="number" id="ogMintGst" step="any" placeholder="GST kiekis"></div>
+                            <div class="input-group"><label for="ogMintGmt">GMT Suma</label><input type="number" id="ogMintGmt" step="any" placeholder="GMT kiekis"></div>
+                        </div>
+                        <div class="input-group"><label for="ogMintScrolls">Minting Scrolls Kiekis</label><input type="number" id="ogMintScrolls" step="1" placeholder="pvz., 2"></div>
+                    </div>
+                    
                     <div class="input-group mt-4"><label for="logDescription">Aprašymas (nebūtina)</label><input type="text" id="logDescription" placeholder="pvz., Parduotas 'Jogger'"></div>
                     <button id="logSubmitBtn" type="submit" class="primary-btn">Pridėti įrašą</button>
                 </form>
@@ -48,7 +75,8 @@
         </main>
     </div>
 
-    <!-- Prijungiame TIK pagrindinį scenarijų -->
+    <!-- Prijungiame abu scenarijus -->
     <script src="script.js" defer></script>
+    <script src="converter.js" defer></script>
 </body>
 </html>
