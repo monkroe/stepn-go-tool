@@ -30,7 +30,14 @@
 
                     <div class="grid-2-cols">
                         <div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div>
-                        <div class="input-group"><label for="logType">Tipas</label><select id="logType" required><option value="expense">Išlaidos</option><option value="income">Pajamos</option></select></div>
+                        <div class="input-group"><label for="logType">Tipas</label>
+                            <!-- PATAISYMAS ČIA -->
+                            <select id="logType" required>
+                                <option value="" disabled selected>Pasirinkite tipą...</option>
+                                <option value="expense">Išlaidos</option>
+                                <option value="income">Pajamos</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="input-group"><label for="logCategory">Kategorija</label><select id="logCategory" required><option value="" disabled selected>Pasirinkite kategoriją...</option></select></div>
                     
@@ -75,7 +82,6 @@
         </main>
     </div>
 
-    <!-- Prijungiame abu scenarijus -->
     <script src="script.js" defer></script>
     <script src="converter.js" defer></script>
 </body>
