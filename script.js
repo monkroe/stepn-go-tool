@@ -1,4 +1,4 @@
-// Failas: script.js
+// Failas: script.js (Versija su pataisymais ir apsaugomis)
 (function() {
     'use strict';
     const SUPABASE_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
@@ -47,12 +47,11 @@
         const ids = [
             'tab-btn-logger', 'tab-btn-converter', 'tab-content-logger', 'tab-content-converter',
             'logForm', 'platform', 'logDate', 'logType', 'logCategory', 'logDescription', 'logSubmitBtn',
-            'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields',
+            'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields',
             'logTokenRadioGroup', 'logTokenAmount',
             'goLevelUpGgt', 'goLevelUpGmt',
             'ogLevelUpGst', 'ogLevelUpGmt',
             'ogMintGst', 'ogMintGmt', 'ogMintScrolls',
-            'editRateUsd', 'editAmountUsd',
             'logTableBody', 'summaryContainer', 'converter-grid',
             'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn'
         ];
@@ -60,15 +59,17 @@
     }
 
     function bindEventListeners() {
-        elements.platform.addEventListener('change', updateDynamicForm);
-        elements.logType.addEventListener('change', updateDynamicForm);
-        elements.logCategory.addEventListener('change', updateDynamicForm);
+        if (elements['tab-btn-logger']) elements['tab-btn-logger'].addEventListener('click', () => switchTab('logger'));
+        if (elements['tab-btn-converter']) elements['tab-btn-converter'].addEventListener('click', () => switchTab('converter'));
         
-        elements.logForm.addEventListener('submit', handleLogSubmit);
-        elements.logTableBody.addEventListener('click', handleLogTableClick);
-        elements.filterBtn.addEventListener('click', loadAndRenderLogTable);
-        elements['tab-btn-logger'].addEventListener('click', () => switchTab('logger'));
-        elements['tab-btn-converter'].addEventListener('click', () => switchTab('converter'));
+        if (elements.logForm) elements.logForm.addEventListener('submit', handleLogSubmit);
+        if (elements.logTableBody) elements.logTableBody.addEventListener('click', handleLogTableClick);
+        
+        if (elements.platform) elements.platform.addEventListener('change', updateDynamicForm);
+        if (elements.logType) elements.logType.addEventListener('change', updateDynamicForm);
+        if (elements.logCategory) elements.logCategory.addEventListener('change', updateDynamicForm);
+        
+        if (elements.filterBtn) elements.filterBtn.addEventListener('click', loadAndRenderLogTable);
 
         if (elements['converter-grid']) {
             elements['converter-grid'].addEventListener('input', handleConverterInput);
@@ -196,17 +197,19 @@
     }
 
     function resetLogForm() {
-        elements.logForm.reset();
-        elements.platform.value = 'go';
-        elements.logType.value = "expense";
-        updateDynamicForm();
-        
-        const today = new Date();
-        today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
-        elements.logDate.value = today.toISOString().split('T')[0];
-        
-        elements.logSubmitBtn.textContent = 'Pridėti įrašą';
-        elements.logSubmitBtn.disabled = false;
+        if (elements.logForm) {
+            elements.logForm.reset();
+            elements.platform.value = 'go';
+            elements.logType.value = "expense";
+            updateDynamicForm();
+            
+            const today = new Date();
+            today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+            elements.logDate.value = today.toISOString().split('T')[0];
+            
+            elements.logSubmitBtn.textContent = 'Pridėti įrašą';
+            elements.logSubmitBtn.disabled = false;
+        }
     }
     
     async function createSingleLogEntry(entryData) {
@@ -288,8 +291,8 @@
 
     async function loadAndRenderLogTable() {
         let query = supabase.from('transactions').select('*');
-        if (elements.filterStartDate.value) query = query.gte('date', elements.filterStartDate.value);
-        if (elements.filterEndDate.value) query = query.lte('date', elements.filterEndDate.value);
+        if (elements.filterStartDate && elements.filterStartDate.value) query = query.gte('date', elements.filterStartDate.value);
+        if (elements.filterEndDate && elements.filterEndDate.value) query = query.lte('date', elements.filterEndDate.value);
         
         const filterTokenValue = elements.filterToken ? elements.filterToken.value : "";
         if (filterTokenValue) {
@@ -323,6 +326,7 @@
     }
 
     function renderLogTable(data) {
+        if (!elements.logTableBody) return;
         elements.logTableBody.innerHTML = ''; 
         let totalIncomeUSD = 0, totalExpenseUSD = 0; 
         const tokenBalances = {};
@@ -350,6 +354,7 @@
     }
     
     function renderSummary(income, expense, tokenBalances) {
+        if (!elements.summaryContainer) return;
         const balance = income - expense;
         const btcPrice = liveTokenPrices['bitcoin']?.price;
         let btcValueHTML = '';
