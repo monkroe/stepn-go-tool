@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('tab-content-logger');
   const logForm = document.createElement('form');
