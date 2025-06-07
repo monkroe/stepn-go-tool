@@ -1,4 +1,4 @@
-// Failas: script.js (Versija su pilnai veikiančiu redagavimu)
+// Failas: script.js (Versija su pilnai veikiančiu redagavimu ir visais placeholder'iais)
 (function() {
     'use strict';
     const SUPABASE_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
@@ -108,7 +108,7 @@
         const isEditing = !!elements.logForm.dataset.editingId;
         if (isEditing) {
             elements.standardFields.classList.remove('hidden');
-            elements.editFields.classList.remove('hidden'); // Rodo redagavimo laukus
+            elements.editFields.classList.remove('hidden');
             return;
         }
 
@@ -161,7 +161,7 @@
         const date = elements.logDate.value;
         const type = elements.logType.value;
         let description = elements.logDescription.value.trim();
-        if (!type || !category) throw new Error("Prašome pasirinkti tipą ir kategoriją.");
+        if (!platform || !type || !category) throw new Error("Prašome pasirinkti platformą, tipą ir kategoriją.");
         const commonData = { date, type, category, description }; 
         let operations = []; 
         if (platform === 'go' && category === 'Level-up') {
@@ -178,9 +178,10 @@
             const gst = parseFloat(elements.ogMintGst.value) || 0;
             const gmt = parseFloat(elements.ogMintGmt.value) || 0;
             const scrolls = parseInt(elements.ogMintScrolls.value) || 0;
-            if (scrolls > 0) commonData.description += ` (Panaudota ${scrolls} Minting Scrolls)`;
-            if(gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
-            if(gmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: gmt });
+            let mintDesc = description;
+            if (scrolls > 0) mintDesc += ` (Panaudota ${scrolls} Minting Scrolls)`;
+            if(gst > 0) operations.push({ ...commonData, description: mintDesc, tokenKey: 'gst', tokenAmount: gst });
+            if(gmt > 0) operations.push({ ...commonData, description: mintDesc, tokenKey: 'gmt', tokenAmount: gmt });
         } else {
             const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
             if (!selectedTokenRadio) throw new Error("Prašome pasirinkti žetoną.");
@@ -219,7 +220,7 @@
             elements.logForm.reset();
             delete elements.logForm.dataset.editingId;
             delete elements.logForm.dataset.oldEntry;
-            elements.platform.value = 'go';
+            elements.platform.value = ""; 
             elements.logType.value = ""; 
             updateDynamicForm();
             const today = new Date();
@@ -261,26 +262,20 @@
         resetLogForm();
         elements.logForm.dataset.editingId = entry.id;
         elements.logForm.dataset.oldEntry = JSON.stringify(entry);
-
         elements.platform.value = entry.platform || 'go';
         elements.logDate.value = entry.date;
         elements.logType.value = entry.type;
         updateDynamicForm();
         elements.logCategory.value = entry.category;
         updateVisibleFields();
-
         const tokensForPlatform = entry.platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc'];
         updateTokenRadioButtons(tokensForPlatform);
-        
         const radioToSelect = document.querySelector(`input[name="logToken"][value="${entry.token}"]`);
         if (radioToSelect) radioToSelect.checked = true;
-
         elements.logTokenAmount.value = entry.token_amount;
         elements.logDescription.value = entry.description;
-        
         elements.editRateUsd.value = (entry.rate_usd || 0).toFixed(8);
         elements.editAmountUsd.value = ((entry.rate_usd || 0) * (entry.token_amount || 0)).toFixed(2);
-
         elements.logSubmitBtn.textContent = 'Atnaujinti įrašą';
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
