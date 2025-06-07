@@ -1,21 +1,20 @@
-// Failas: script.js (Versija su logotipais)
+// Failas: script.js (Versija su platformų logika ir logotipais)
 (function() {
     'use strict';
     const SUPABASE_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpvamh1cmh3bWNlb3F4a2F0dmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNjYxNDYsImV4cCI6MjA2NDc0MjE0Nn0.NFGhQc7H95U9vOaM7OVxNUgTuXSughz8ZuxaCLfbfQE';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // PAKEITIMAS: Pridėta 'logo' savybė su tiesiogine nuoroda
     const ALL_TOKENS_CONFIG = {
-        'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', logo: 'https://assets.coingecko.com/coins/images/23594/large/gmt.png' },
-        'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', logo: 'https://assets.coingecko.com/coins/images/36959/large/GGT_Logo_200x200.png' },
-        'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', logo: 'https://assets.coingecko.com/coins/images/21991/large/O4GfG2C.png' },
-        'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png' },
-        'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png' },
-        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
-        'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png' },
-        'bnb':  { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png' },
-        'eth':  { key: 'eth', symbol: 'ETH', apiId: 'ethereum', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' }
+        'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', logo: 'https://assets.coingecko.com/coins/images/23594/large/gmt.png?1696522971' },
+        'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', logo: 'https://assets.coingecko.com/coins/images/36959/large/GGT_Logo_200x200.png?1712128784' },
+        'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', logo: 'https://assets.coingecko.com/coins/images/21991/large/O4GfG2C.png?1696521406' },
+        'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png?1696504756' },
+        'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png?1696506694' },
+        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png?1696501400' },
+        'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png?1696501661' },
+        'bnb':  { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png?1696502170' },
+        'eth':  { key: 'eth', symbol: 'ETH', apiId: 'ethereum', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png?1696501628' }
     };
     
     const CATEGORIES = {
@@ -126,19 +125,11 @@
         }
     }
 
-    // PAKEITIMAS: Įtraukiamas logotipas
     function updateTokenRadioButtons(tokensToShow) {
         if (!elements.logTokenRadioGroup) return;
         elements.logTokenRadioGroup.innerHTML = tokensToShow.map((key, index) => {
             const token = ALL_TOKENS_CONFIG[key];
-            return `<label class="radio-label">
-                        <span>
-                            <img src="${token.logo}" alt="${token.symbol}" class="token-logo">
-                            ${token.symbol}
-                        </span>
-                        <input type="radio" name="logToken" value="${key}" ${index === 0 ? 'checked' : ''}>
-                        <span class="radio-custom-dot"></span>
-                    </label>`;
+            return `<label class="radio-label"><span><img src="${token.logo}" alt="${token.symbol}" class="token-logo">${token.symbol}</span><input type="radio" name="logToken" value="${key}" ${index === 0 ? 'checked' : ''}><span class="radio-custom-dot"></span></label>`;
         }).join('');
     }
 
