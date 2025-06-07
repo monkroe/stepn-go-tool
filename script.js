@@ -1,20 +1,21 @@
-// Failas: script.js (Versija su pilnai veikiančiu redagavimu ir visais placeholder'iais)
+// Failas: script.js (Versija su logotipais)
 (function() {
     'use strict';
     const SUPABASE_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpvamh1cmh3bWNlb3F4a2F0dmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNjYxNDYsImV4cCI6MjA2NDc0MjE0Nn0.NFGhQc7H95U9vOaM7OVxNUgTuXSughz8ZuxaCLfbfQE';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
+    // PAKEITIMAS: Pridėta 'logo' savybė su tiesiogine nuoroda
     const ALL_TOKENS_CONFIG = {
-        'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', historyApiId: 'stepn' },
-        'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', historyApiId: 'ggt' },
-        'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', historyApiId: 'green-satoshi-token' },
-        'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', historyApiId: 'solana' },
-        'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', historyApiId: 'usd-coin', fixedPrice: 1.0 },
-        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin' },
-        'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', historyApiId: 'tether', fixedPrice: 1.0 },
-        'bnb':  { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', historyApiId: 'binancecoin' },
-        'eth':  { key: 'eth', symbol: 'ETH', apiId: 'ethereum', historyApiId: 'ethereum' }
+        'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', logo: 'https://assets.coingecko.com/coins/images/23594/large/gmt.png' },
+        'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', logo: 'https://assets.coingecko.com/coins/images/36959/large/GGT_Logo_200x200.png' },
+        'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', logo: 'https://assets.coingecko.com/coins/images/21991/large/O4GfG2C.png' },
+        'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png' },
+        'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png' },
+        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
+        'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png' },
+        'bnb':  { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png' },
+        'eth':  { key: 'eth', symbol: 'ETH', apiId: 'ethereum', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' }
     };
     
     const CATEGORIES = {
@@ -104,14 +105,12 @@
         ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields'].forEach(id => {
             if (elements[id]) elements[id].classList.add('hidden');
         });
-
         const isEditing = !!elements.logForm.dataset.editingId;
         if (isEditing) {
             elements.standardFields.classList.remove('hidden');
             elements.editFields.classList.remove('hidden');
             return;
         }
-
         if (platform === 'go' && category === 'Level-up') {
             elements.goLevelUpFields.classList.remove('hidden');
         } else if (platform === 'go' && category === 'Minting') {
@@ -127,11 +126,19 @@
         }
     }
 
+    // PAKEITIMAS: Įtraukiamas logotipas
     function updateTokenRadioButtons(tokensToShow) {
         if (!elements.logTokenRadioGroup) return;
         elements.logTokenRadioGroup.innerHTML = tokensToShow.map((key, index) => {
             const token = ALL_TOKENS_CONFIG[key];
-            return `<label class="radio-label"><span>${token.symbol}</span><input type="radio" name="logToken" value="${key}" ${index === 0 ? 'checked' : ''}><span class="radio-custom-dot"></span></label>`;
+            return `<label class="radio-label">
+                        <span>
+                            <img src="${token.logo}" alt="${token.symbol}" class="token-logo">
+                            ${token.symbol}
+                        </span>
+                        <input type="radio" name="logToken" value="${key}" ${index === 0 ? 'checked' : ''}>
+                        <span class="radio-custom-dot"></span>
+                    </label>`;
         }).join('');
     }
 
