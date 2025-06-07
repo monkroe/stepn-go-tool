@@ -1,4 +1,4 @@
-// Failas: script.js (Versija su pataisymais ir apsaugomis)
+// Failas: script.js (Pagrindinė programos logika)
 (function() {
     'use strict';
     const SUPABASE_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
@@ -28,8 +28,18 @@
         }
     };
 
-    let liveTokenPrices = {}, elements = {};
+    let liveTokenPrices = {};
+    let elements = {};
     
+    // Sukuriam globalų objektą, per kurį scenarijai galės bendrauti
+    window.appData = {
+        tokens: ALL_TOKENS_CONFIG,
+        prices: liveTokenPrices
+    };
+    window.appActions = {
+        fetchPrices: fetchLiveTokenPrices,
+    };
+
     async function init() {
         cacheDOMElements();
         bindEventListeners();
@@ -37,10 +47,6 @@
         await fetchLiveTokenPrices(true);
         await loadAndRenderLogTable();
         resetLogForm();
-        
-        const converterTokens = Object.keys(ALL_TOKENS_CONFIG);
-        generateConverterCards(converterTokens);
-        updateConverterPricesUI();
     }
 
     function cacheDOMElements() {
@@ -52,7 +58,7 @@
             'goLevelUpGgt', 'goLevelUpGmt',
             'ogLevelUpGst', 'ogLevelUpGmt',
             'ogMintGst', 'ogMintGmt', 'ogMintScrolls',
-            'logTableBody', 'summaryContainer', 'converter-grid',
+            'logTableBody', 'summaryContainer',
             'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn'
         ];
         ids.forEach(id => { if(document.getElementById(id)) elements[id] = document.getElementById(id); });
@@ -61,20 +67,12 @@
     function bindEventListeners() {
         if (elements['tab-btn-logger']) elements['tab-btn-logger'].addEventListener('click', () => switchTab('logger'));
         if (elements['tab-btn-converter']) elements['tab-btn-converter'].addEventListener('click', () => switchTab('converter'));
-        
         if (elements.logForm) elements.logForm.addEventListener('submit', handleLogSubmit);
         if (elements.logTableBody) elements.logTableBody.addEventListener('click', handleLogTableClick);
-        
         if (elements.platform) elements.platform.addEventListener('change', updateDynamicForm);
         if (elements.logType) elements.logType.addEventListener('change', updateDynamicForm);
         if (elements.logCategory) elements.logCategory.addEventListener('change', updateDynamicForm);
-        
         if (elements.filterBtn) elements.filterBtn.addEventListener('click', loadAndRenderLogTable);
-
-        if (elements['converter-grid']) {
-            elements['converter-grid'].addEventListener('input', handleConverterInput);
-            elements['converter-grid'].addEventListener('click', handleConverterClick);
-        }
     }
 
     function updateDynamicForm() {
@@ -153,10 +151,8 @@
         const type = elements.logType.value;
         let description = elements.logDescription.value.trim();
 
-        if (!category) {
-            throw new Error("Prašome pasirinkti kategoriją.");
-        }
-
+        if (!category) throw new Error("Prašome pasirinkti kategoriją.");
+        
         const commonData = { date, type, category, description: '' };
         let operations = []; 
 
@@ -283,7 +279,6 @@
             for (const apiId in data) { 
                 liveTokenPrices[apiId] = { price: data[apiId].usd, change: data[apiId].usd_24h_change || 0 }; 
             }
-            updateConverterPricesUI();
         } catch (error) { 
             console.error("Klaida gaunant realaus laiko kainas:", error); 
         }
@@ -367,64 +362,6 @@
         Object.keys(tokenBalances).sort().forEach(token => { const amount = tokenBalances[token]; tokenBalancesHTML += `<div class="summary-row"><span class="summary-label">${token.toUpperCase()} Balansas:</span><span class="summary-value ${amount >= 0 ? 'income-color' : 'expense-color'}">${amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>`; });
         
         elements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2">Bendra suvestinė (pagal filtrus)</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
-    }
-
-    function generateConverterCards(tokenKeys) {
-        if (!elements['converter-grid']) return;
-        const tokensToDisplay = [ { key: 'usd', symbol: 'USD', apiId: 'usd', fixedPrice: 1.0 }, ...tokenKeys.map(k => ALL_TOKENS_CONFIG[k]).filter(t => t)];
-        let html = '';
-        tokensToDisplay.forEach(token => { html += `<div class="converter-card" id="card-${token.apiId}"><div class="converter-card-header"><span class="converter-card-title">${token.symbol}</span><button class="converter-card-update-btn" data-api-id="${token.apiId}">Atnaujinti</button></div><div class="converter-card-price-wrapper"><div class="converter-card-price" id="price-${token.apiId}">$0.00000</div><div class="price-change" id="change-${token.apiId}"></div></div><div class="input-group"><label for="amount-${token.apiId}" class="text-xs">Kiekis:</label><input type="number" id="amount-${token.apiId}" data-api-id="${token.apiId}" class="converter-amount-input" placeholder="0.00"></div><div class="input-group"><label for="value-${token.apiId}" class="text-xs">Vertė USD:</label><input type="number" id="value-${token.apiId}" class="converter-value-input" placeholder="0.00"></div><div class="update-time" id="time-${token.apiId}"></div></div>`; });
-        elements['converter-grid'].innerHTML = html;
-    }
-
-    function updateConverterPricesUI() {
-         document.querySelectorAll('.converter-card').forEach(card => {
-            const apiId = card.id.replace('card-', '');
-            const priceData = liveTokenPrices[apiId];
-            const priceEl = card.querySelector(`#price-${apiId}`);
-            const changeEl = card.querySelector(`#change-${apiId}`);
-            if (priceData && typeof priceData.price !== 'undefined') {
-                priceEl.textContent = `$${priceData.price.toFixed(5)}`;
-                const change = priceData.change || 0;
-                changeEl.classList.remove('price-up', 'price-down');
-                if (change > 0) {
-                    changeEl.textContent = `▲ +${change.toFixed(2)}%`;
-                    changeEl.classList.add('price-up');
-                } else if (change < 0) {
-                    changeEl.textContent = `▼ ${change.toFixed(2)}%`;
-                    changeEl.classList.add('price-down');
-                } else {
-                     changeEl.textContent = `0.00%`;
-                }
-            } else { priceEl.textContent = 'N/A'; changeEl.textContent = ''; }
-            card.querySelector(`#time-${apiId}`).textContent = `Atnaujinta: ${new Date().toLocaleTimeString('lt-LT')}`;
-         });
-    }
-
-    function handleConverterInput(event) {
-        const input = event.target; 
-        if (!input.closest('.converter-card')) return;
-        const value = parseFloat(input.value);
-        if(isNaN(value)) { 
-            document.querySelectorAll('.converter-amount-input, .converter-value-input').forEach(i => { if(i !== input) i.value = ''; }); 
-            return; 
-        }
-        let usdValue;
-        if(input.classList.contains('converter-amount-input')) {
-            const apiId = input.dataset.apiId; 
-            const price = liveTokenPrices[apiId]?.price || 0; 
-            usdValue = value * price;
-        } else { 
-            usdValue = value; 
-        }
-        document.querySelectorAll('.converter-card').forEach(card => {
-            const cardApiId = card.id.replace('card-', ''); 
-            const price = liveTokenPrices[cardApiId]?.price || 0;
-            const valueInput = card.querySelector('.converter-value-input'); 
-            const amountInput = card.querySelector('.converter-amount-input');
-            if (input !== valueInput) valueInput.value = usdValue.toFixed(2);
-            if (input !== amountInput && price > 0) amountInput.value = (usdValue / price).toFixed(6);
-        });
     }
 
     function switchTab(tabName) {
