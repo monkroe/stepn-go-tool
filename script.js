@@ -215,7 +215,7 @@
 
         // Jei tipas nepasirinktas (rodomas placeholderis), atstatome kategoriją
         if (!type) {
-            elements.logCategory.innerHTML = `<option value="" disabled selected>Pasirinkite</option>`;
+            elements.logCategory.innerHTML = `<option value="" disabled selected>Pasirinkti</option>`;
             handleCategoryChange();
             return;
         }
