@@ -56,8 +56,18 @@ tr:last-child td { border-bottom: none; }
 .converter-card .update-time { font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; }
 .filter-section { background-color: #111827; padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; align-items: end; }
 /* Failas: style.css (pridėti pabaigoje arba pakeisti senas taisykles) */
+/* Failas: style.css (GALUTINIS kodas ikonoms abiejuose komponentuose) */
 
-/* Stilius langeliui, kuriame yra ikona */
+/* === BENDRI STILIAI IKONOMS (abiem komponentam) === */
+.table-token-logo,
+.converter-card .token-logo {
+    width: 24px;         /* Ikonos plotis */
+    height: 24px;        /* Ikonos aukštis */
+    border-radius: 50%;  /* Padaro ikonas apvalias */
+    object-fit: cover;   /* Užtikrina, kad ikona gražiai užpildytų apskritimą */
+}
+
+/* === SPECIFINIAI STILIAI TRANSAKCIJŲ SĄRAŠUI === */
 .token-cell {
     /* Naudojame Flexbox, kad ikona būtų idealiai centre */
     display: flex;
@@ -70,13 +80,17 @@ tr:last-child td { border-bottom: none; }
     padding-bottom: 0.5rem;
 }
 
-/* Stilius pačiai ikonai */
-.table-token-logo {
-    width: 24px;         /* Šiek tiek didesnė ikona, atrodys geriau */
-    height: 24px;
-    
-    /* ŠI EILUTĖ PADARO IKONAS APVALIAS */
+/* === SPECIFINIAI STILIAI KONVERTERIO KORTELEI === */
+.converter-card-title {
+    display: flex;         /* Naudojame Flexbox ikonai ir tekstui išdėstyti */
+    align-items: center;   /* Centruojame vertikaliai */
+    gap: 8px;              /* Tarpas tarp ikonos ir teksto */
+    font-weight: 600;      /* Pastoriname šriftą */
+}
+
+/* Papildomas stilius, kad radijo mygtukų ikonos nebūtų per didelės */
+.radio-label .token-logo {
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    
-    object-fit: cover; /* Naudojame 'cover', kad apvalios ikonos geriau užpildytų rėmus */
 }
