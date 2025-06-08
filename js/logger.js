@@ -1,8 +1,9 @@
-// Failas: js/logger.js (Galutinė versija su visomis kategorijomis)
+// Failas: js/logger.js (Pataisyta ir galutinė versija)
+
 (function() {
     'use strict';
     
-    // === ATNAUJINTAS KATEGORIJŲ OBJEKTAS ===
+    // Kategorijų objektas, viskas gerai
     const CATEGORIES = {
         go: {
             income: { 
@@ -35,17 +36,33 @@
 
     const loggerElements = {};
 
+    // Priskiriame funkcijas globaliam objektui, viskas gerai
     window.appActions = window.appActions || {};
     window.appActions.initLogger = initLogger;
     window.appActions.loadAndRenderLogTable = loadAndRenderLogTable;
     window.appActions.renderLogTable = renderLogTable;
 
+    // === PATAISYTA INICIALIZAVIMO FUNKCIJA ===
+    // Čia buvo pagrindinė problema. Dabar funkcijos kviečiamos logiška tvarka.
     function initLogger() {
+        console.log('Logger is initializing...');
+
+        // 1. Pirmiausia surandame visus reikalingus HTML elementus.
         cacheLoggerElements();
-        bindLoggerEventListeners();
-        updateDynamicForm();
-        loadAndRenderLogTable();
+        
+        // 2. Nustatome formą į pradinę, švarią būseną. Ši funkcija viduje
+        // pati iškviečia updateDynamicForm(), kuri teisingai nustatys visus laukus
+        // pagal tuščias pradines reikšmes (pvz., išjungs kategorijų laukelį).
         resetLogForm();
+
+        // 3. Dabar, kai forma yra paruošta, priskiriame visus įvykių klausytojus.
+        // Jie reaguos į vartotojo veiksmus.
+        bindLoggerEventListeners();
+        
+        // 4. Galiausiai, užkrauname duomenis iš duomenų bazės ir atvaizduojame lentelę.
+        loadAndRenderLogTable();
+        
+        console.log('Logger initialized successfully.');
     }
 
     function cacheLoggerElements() {
@@ -198,9 +215,12 @@
             loggerElements.logForm.reset();
             delete loggerElements.logForm.dataset.editingId;
             delete loggerElements.logForm.dataset.oldEntry;
-            loggerElements.platform.value = "";
-            loggerElements.logType.value = "";
+            loggerElements.platform.value = ""; // Nustatome tuščią reikšmę
+            loggerElements.logType.value = ""; // Nustatome tuščią reikšmę
+            
+            // Iškviečiame formos atnaujinimą, kad kategorijos būtų išvalytos ir laukai paslėpti
             updateDynamicForm();
+            
             const today = new Date();
             today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
             loggerElements.logDate.value = today.toISOString().split('T')[0];
@@ -216,15 +236,27 @@
 
     function updateCategoryDropdown() {
         if (!loggerElements.platform || !loggerElements.logType || !loggerElements.logCategory) return;
+        
         const platform = loggerElements.platform.value;
         const type = loggerElements.logType.value;
         const platformCategories = CATEGORIES[platform]?.[type] || {};
-        const currentCategory = loggerElements.logCategory.value;
+        
+        const currentCategoryValue = loggerElements.logCategory.value;
+        
         let optionsHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
         optionsHTML += Object.entries(platformCategories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
+        
         loggerElements.logCategory.innerHTML = optionsHTML;
-        if (platformCategories[currentCategory]) loggerElements.logCategory.value = currentCategory;
-        else loggerElements.logCategory.value = "";
+
+        // Išjungiame kategorijų laukelį, jei nėra ką rinktis
+        loggerElements.logCategory.disabled = Object.keys(platformCategories).length === 0;
+
+        // Pabandoma palikti seną reikšmę, jei ji vis dar egzistuoja naujame sąraše
+        if (platformCategories[currentCategoryValue]) {
+            loggerElements.logCategory.value = currentCategoryValue;
+        } else {
+            loggerElements.logCategory.value = ""; // Išvalome, jei seno pasirinkimo nebėra
+        }
     }
 
     function updateVisibleFields() {
