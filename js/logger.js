@@ -1,4 +1,4 @@
-// Failas: js/logger.js (GALUTINĖ VERSIJA, kuri sutvarko lentelės išdėstymą)
+// Failas: js/logger.js (GALUTINĖ VERSIJA, kuri sutvarko lentelės išsidėstymą)
 
 (function() {
     'use strict';
@@ -276,7 +276,7 @@
         loggerElements.filterToken.value = currentValue;
     }
 
-    // === PATIKIMESNĖ LENTELĖS GENERAVIMO FUNKCIJA ===
+    // === PATAISYTA LENTELĖS GENERAVIMO FUNKCIJA ===
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '';
@@ -288,6 +288,8 @@
         
         let totalIncomeUSD = 0, totalExpenseUSD = 0; 
         const tokenBalances = {};
+
+        // Surenkame visų eilučių HTML į vieną kintamąjį
         const rowsHTML = data.map(entry => {
             const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
             const isIncome = entry.type === 'income';
@@ -299,8 +301,7 @@
             
             const tokenInfo = window.appData.tokens[entry.token];
             
-            // Generuojame HTML eilutę kaip vientisą tekstą, kad išvengtume klaidų.
-            // Visada turėsime 8 langelius (<td>).
+            // Generuojame HTML eilutę kaip vientisą tekstą su visais 8 langeliais.
             return `
                 <tr data-id="${entry.id}">
                     <td>${entry.date}</td>
@@ -310,7 +311,7 @@
                     </td>
                     <td>${(entry.token_amount || 0).toLocaleString('en-US', {maximumFractionDigits: 2})}</td>
                     <td>$${(entry.rate_usd || 0).toFixed(5)}</td>
-                    <td>$${amount_usd.toFixed(2)}</td>
+                    <td>$${amount_usd.toFixed(2)}</td> 
                     <td>${entry.description || ''}</td>
                     <td class="log-table-actions">
                         <button class="btn-edit">Taisyti</button>
@@ -320,6 +321,7 @@
             `;
         }).join('');
         
+        // Įterpiame visą sugeneruotą HTML vienu kartu
         loggerElements.logTableBody.innerHTML = rowsHTML;
         renderSummary(totalIncomeUSD, totalExpenseUSD, tokenBalances);
     }
