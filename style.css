@@ -55,39 +55,26 @@ tr:last-child td { border-bottom: none; }
 .price-down { color: #f87171; }
 .converter-card .update-time { font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; }
 .filter-section { background-color: #111827; padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; align-items: end; }
-/* Pridėti į style.css pabaigą */
+/* Failas: style.css (pridėti pabaigoje arba pakeisti senas taisykles) */
 
-/* Logotipų stiliai */
-.token-logo {
-    width: 24px;
-    height: 24px;
-    margin-right: 8px;
-    border-radius: 50%; /* Daro logotipus apvalius */
-    vertical-align: middle;
-}
-
-/* Konverterio kortelės pavadinimo stilius, kad logotipas ir tekstas būtų vienoje eilutėje */
-.converter-card-title {
-    display: flex;
-    align-items: center;
-}
-
-/* Radio mygtuko etiketės stilius */
-.radio-label span:first-child {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-/* Failas: style.css (pridėti pabaigoje) */
+/* Stilius langeliui, kuriame yra ikona */
 .token-cell {
+    /* Naudojame Flexbox, kad ikona būtų idealiai centre */
     display: flex;
-    align-items: center;
-    gap: 8px;
+    justify-content: center; /* Centruoja horizontaliai */
+    align-items: center;    /* Centruoja vertikaliai */
+    
+    /* Galima nustatyti fiksuotą plotį, kad stulpelis būtų tvarkingas */
+    width: 60px;
 }
 
+/* Stilius pačiai ikonai */
 .table-token-logo {
-    width: 24px;
-    height: 24px;
+    width: 22px;         /* Mažesnis plotis */
+    height: 22px;        /* Mažesnis aukštis */
+    
+    /* ŠI EILUTĖ PADARO IKONAS APVALIAS */
     border-radius: 50%;
-    object-fit: contain;
+    
+    object-fit: contain; /* Neleidžia paveikslėliui išsikraipyti */
 }
