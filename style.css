@@ -112,12 +112,12 @@ table {
 
 th, td { 
     text-align: left; 
-    padding: 0.75rem; 
+    padding: 0.75rem; /* Consistent padding */
     font-size: 0.875rem; 
-    vertical-align: middle; 
+    vertical-align: middle; /* Ensures all content is vertically centered */
     border-bottom: 1px solid #4b5563; 
-    min-width: 0; /* Removes minimum width to allow flexibility */
-    word-break: break-word; /* Ensures text wraps cleanly */
+    min-width: 0; /* Allows flexibility */
+    word-break: break-word; /* Clean text wrapping */
 }
 
 th { 
@@ -195,12 +195,8 @@ tr:last-child td {
 .token-cell {
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 0.5rem;
-}
-
-.token-cell img {
-    margin-right: 0.5rem;
+    align-items: center; /* Ensures vertical centering */
+    padding: 0.75rem; /* Matches th, td padding for consistency */
 }
 
 /* Stiliai ikonai konverterio kortelėje */
