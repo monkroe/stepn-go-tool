@@ -106,6 +106,7 @@ table {
     width: 100%; 
     margin-top: 1rem; 
     border-collapse: collapse; 
+    table-layout: fixed; /* Forces consistent column widths */
     overflow-x: auto; 
 }
 
@@ -115,8 +116,8 @@ th, td {
     font-size: 0.875rem; 
     vertical-align: middle; 
     border-bottom: 1px solid #4b5563; 
-    min-width: 100px; 
-    word-break: break-all; 
+    min-width: 0; /* Removes minimum width to allow flexibility */
+    word-break: break-word; /* Ensures text wraps cleanly */
 }
 
 th { 
@@ -227,6 +228,7 @@ tr:last-child td {
 .arrow-cell {
     font-size: 1.25rem;
     text-align: center;
+    width: 50px; /* Fixed width to prevent shifting */
 }
 
 @media (max-width: 640px) {
@@ -235,6 +237,6 @@ tr:last-child td {
         overflow-x: auto;
     }
     th, td {
-        min-width: 120px;
+        min-width: 80px; /* Reduced to allow better wrapping */
     }
 }
