@@ -1,15 +1,17 @@
-// Failas: converter.js (Grąžinta sena, patikima "laukimo" logika)
+// Failas: js/converter.js (Pritaikyta naujai architektūrai)
 (function() {
     'use strict';
 
     let elements = {};
     let liveTokenPrices, ALL_TOKENS_CONFIG;
 
-    // Pridedame TIK update funkciją, kurios reikia script.js
+    // Pridedame savo funkcijas prie globalių veiksmų, kad script.js galėtų jas kviesti
     window.appActions = window.appActions || {};
     window.appActions.updateConverterUI = updateConverterPricesUI;
+    window.appActions.initConverter = initConverter; // Svarbiausia dalis!
 
     function initConverter() {
+        // Dabar nebereikia laukti, nes script.js garantuoja, kad duomenys jau yra paruošti
         // Pasiimame duomenis iš globalaus objekto
         ALL_TOKENS_CONFIG = window.appData.tokens;
         liveTokenPrices = window.appData.prices;
@@ -20,22 +22,29 @@
         updateConverterPricesUI();
     }
 
-    // --- VISAS KITAS KODAS IKI PAT PABAIGOS LIEKA TOKS PATS ---
-    
-    function cacheConverterElements() { /* ... nekeista ... */ }
-    function bindConverterEventListeners() { /* ... nekeista ... */ }
+    function cacheConverterElements() {
+        if (document.getElementById('converter-grid')) {
+            elements['converter-grid'] = document.getElementById('converter-grid');
+        }
+    }
+
+    function bindConverterEventListeners() {
+        if (elements['converter-grid']) {
+            elements['converter-grid'].addEventListener('input', handleConverterInput);
+            elements['converter-grid'].addEventListener('click', handleConverterClick);
+        }
+    }
 
     function generateConverterCards() {
         if (!elements['converter-grid']) return;
-        
-        // --- PATAISYMAS: imame VISUS duomenis iš konfigūracijos, įskaitant USD ---
-        const tokensToDisplay = Object.values(ALL_TOKENS_CONFIG);
+        const tokenKeys = Object.keys(ALL_TOKENS_CONFIG);
+        const usdLogo = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48bGluZSB4MT0iMTIiIHkxPSIxIiB4Mj0iMTIiIHkyPSIyMyI+PC9saW5lPjxwYXRoIGQ9Ik0xNyA1IDkuNSA0LjUgNCAyIDAgMTIgNCA0IDAgOC00LTQtOC00LTQtMiAwLTEyLTQtNCA4IDAgOC00IDAgOS41IDQuNSA0IDIgMCAxMi00IDQtOCA4LTggNHoiPjwvcGF0aD48L3N2Zz4=';
+        const tokensToDisplay = [ { key: 'usd', symbol: 'USD', apiId: 'usd', fixedPrice: 1.0, logo: usdLogo }, ...tokenKeys.map(k => ALL_TOKENS_CONFIG[k]).filter(t => t)];
         
         let html = '';
         tokensToDisplay.forEach(token => {
-            const id = token.apiId || token.key;
             html += `
-                <div class="converter-card" id="card-${id}">
+                <div class="converter-card" id="card-${token.apiId || token.key}">
                     <div class="converter-card-header">
                         <span class="converter-card-title">
                             <img src="${token.logo}" alt="${token.symbol}" class="token-logo">
@@ -44,40 +53,87 @@
                         <button class="converter-card-update-btn" data-api-id="${token.apiId}">Atnaujinti</button>
                     </div>
                     <div class="converter-card-price-wrapper">
-                        <div class="converter-card-price" id="price-${id}">$0.00000</div>
-                        <div class="price-change" id="change-${id}"></div>
+                        <div class="converter-card-price" id="price-${token.apiId || token.key}">$0.00000</div>
+                        <div class="price-change" id="change-${token.apiId || token.key}"></div>
                     </div>
                     <div class="input-group">
-                        <label for="amount-${id}" class="text-xs">Kiekis:</label>
-                        <input type="number" id="amount-${id}" data-api-id="${id}" class="converter-amount-input" placeholder="0.00">
+                        <label for="amount-${token.apiId || token.key}" class="text-xs">Kiekis:</label>
+                        <input type="number" id="amount-${token.apiId || token.key}" data-api-id="${token.apiId || token.key}" class="converter-amount-input" placeholder="0.00">
                     </div>
                     <div class="input-group">
-                        <label for="value-${id}" class="text-xs">Vertė USD:</label>
-                        <input type="number" id="value-${id}" class="converter-value-input" placeholder="0.00">
+                        <label for="value-${token.apiId || token.key}" class="text-xs">Vertė USD:</label>
+                        <input type="number" id="value-${token.apiId || token.key}" class="converter-value-input" placeholder="0.00">
                     </div>
-                    <div class="update-time" id="time-${id}"></div>
+                    <div class="update-time" id="time-${token.apiId || token.key}"></div>
                 </div>`;
         });
         elements['converter-grid'].innerHTML = html;
     }
-
-    function updateConverterPricesUI() { /* ... nekeista ... */ }
-    function handleConverterInput(event) { /* ... nekeista ... */ }
-    async function handleConverterClick(event) { /* ... nekeista ... */ }
-
-    // --- SVARBIAUSIA DALIS: Grąžiname seną, patikimą "laukimo" logiką ---
-    function tryInit() {
-        if (window.appData && window.appData.tokens && window.appData.prices) {
-            initConverter();
+    
+    function updateConverterPricesUI() {
+         liveTokenPrices = window.appData.prices;
+         document.querySelectorAll('.converter-card').forEach(card => {
+            const apiId = card.id.replace('card-', '');
+            const priceData = liveTokenPrices[apiId];
+            const priceEl = card.querySelector(`#price-${apiId}`);
+            const changeEl = card.querySelector(`#change-${apiId}`);
+            if (priceData && typeof priceData.price !== 'undefined') {
+                priceEl.textContent = `$${priceData.price.toFixed(5)}`;
+                const change = priceData.change || 0;
+                changeEl.classList.remove('price-up', 'price-down');
+                if (change > 0) {
+                    changeEl.textContent = `▲ +${change.toFixed(2)}%`;
+                    changeEl.classList.add('price-up');
+                } else if (change < 0) {
+                    changeEl.textContent = `▼ ${change.toFixed(2)}%`;
+                    changeEl.classList.add('price-down');
+                } else {
+                     changeEl.textContent = `0.00%`;
+                }
+            } else { priceEl.textContent = 'N/A'; changeEl.textContent = ''; }
+            const timeEl = card.querySelector(`#time-${apiId}`);
+            if (timeEl) timeEl.textContent = `Atnaujinta: ${new Date().toLocaleTimeString('lt-LT')}`;
+         });
+    }
+    
+    function handleConverterInput(event) {
+        const input = event.target;
+        if (!input.closest('.converter-card')) return;
+        const value = parseFloat(input.value);
+        if (isNaN(value)) {
+            document.querySelectorAll('.converter-amount-input, .converter-value-input').forEach(i => { if (i !== input) i.value = ''; });
+            return;
+        }
+        let usdValue;
+        if (input.classList.contains('converter-amount-input')) {
+            const apiId = input.dataset.apiId;
+            const price = (liveTokenPrices[apiId]?.price || 0);
+            usdValue = value * price;
         } else {
-            setTimeout(tryInit, 100); // Bandom iš naujo po 100ms
+            usdValue = value;
+        }
+        document.querySelectorAll('.converter-card').forEach(card => {
+            const cardApiId = card.id.replace('card-', '');
+            const price = (liveTokenPrices[cardApiId]?.price || 1); // Naudojam 1, kad išvengti dalybos iš nulio
+            const valueInput = card.querySelector('.converter-value-input');
+            const amountInput = card.querySelector('.converter-amount-input');
+            if (input !== valueInput) valueInput.value = usdValue.toFixed(2);
+            if (input !== amountInput) amountInput.value = (usdValue / price).toFixed(6);
+        });
+    }
+
+    async function handleConverterClick(event) {
+        if (event.target.classList.contains('converter-card-update-btn')) {
+            const apiId = event.target.dataset.apiId;
+            if (window.appActions && typeof window.appActions.fetchPrices === 'function' && apiId) {
+                event.target.textContent = '...';
+                await window.appActions.fetchPrices(false, apiId);
+                event.target.textContent = 'Atnaujinti';
+                updateConverterPricesUI();
+            }
         }
     }
     
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', tryInit);
-    } else {
-        tryInit();
-    }
-
+    // Pašaliname 'DOMContentLoaded' ir 'setTimeout', nes dabar viską valdo script.js
+    // document.addEventListener('DOMContentLoaded', initConverter);
 })();
