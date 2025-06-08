@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Paskutinė patikrinta versija)
+// Failas: js/logger.js (GALUTINĖ VERSIJA, kuri sutvarko lentelės išsidėstymą)
 
 (function() {
     'use strict';
@@ -276,7 +276,7 @@
         loggerElements.filterToken.value = currentValue;
     }
 
-    // === PATIKIMESNĖ LENTELĖS GENERAVIMO FUNKCIJA ===
+    // === PATAISYTA LENTELĖS GENERAVIMO FUNKCIJA ===
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '';
