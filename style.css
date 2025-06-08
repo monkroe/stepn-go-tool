@@ -116,6 +116,7 @@ th, td {
     vertical-align: middle; 
     border-bottom: 1px solid #4b5563; 
     min-width: 100px; /* Ensures minimum width for readability */
+    word-break: break-all; /* Added to handle long text in description column */
 }
 
 th { 
