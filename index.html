@@ -17,9 +17,9 @@
             <button id="tab-btn-converter" class="tab-button" data-tab="converter">Žetonų Kainos</button>
         </nav>
         <div class="text-center my-4">
-  <button id="login-btn" class="primary-btn">Prisijungti per Google</button>
-  <button id="logout-btn" class="primary-btn hidden">Atsijungti</button>
-  <p id="user-email" class="text-sm mt-2 text-gray-400"></p>
+            <button id="login-btn" class="primary-btn">Prisijungti per Google</button>
+            <button id="logout-btn" class="primary-btn hidden">Atsijungti</button>
+            <p id="user-email" class="text-sm mt-2 text-gray-400"></p>
         </div>
         <main>
             <div id="tab-content-logger" class="tab-content active">
@@ -84,7 +84,23 @@
                     <button id="filterBtn" class="primary-btn h-10">Filtruoti</button>
                 </div>
                 <h2 class="text-xl font-semibold my-4">Transakcijų sąrašas</h2>
-                <div class="overflow-x-auto"><table class="min-w-full"><thead><tr><th>Data</th><th>Tipas</th><th>Žetonas</th><th>Suma</th><th>Kursas (USD)</th><th>Suma (USD)</th><th>Aprašymas</th><th>Veiksmai</th></tr></thead><tbody id="logTableBody"></tbody></table></div>
+                <div class="overflow-x-auto">
+                    <table class="overflow-x-auto table-auto min-w-full">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipas</th>
+                                <th>Žetonas</th>
+                                <th>Suma</th>
+                                <th>Kursas (USD)</th>
+                                <th>Suma (USD)</th>
+                                <th>Aprašymas</th>
+                                <th>Veiksmai</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody"></tbody>
+                    </table>
+                </div>
                 <div id="summaryContainer" class="summary-section"></div>
             </div>
             <div id="tab-content-converter" class="tab-content">
