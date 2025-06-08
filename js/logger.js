@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Pataisyta versija su pašalintu (SOL) iš GST)
+// Failas: js/logger.js (Pataisyta versija su pataisyta lentelės struktūra)
 
 (function() {
     'use strict';
@@ -276,7 +276,7 @@
         loggerElements.filterToken.value = currentValue;
     }
 
-    // === PATAISYTA LENTELĖS GENERAVIMO FUNKCIJA SU PAŠALINTU (SOL) IŠ GST ===
+    // === PATAISYTA LENTELĖS GENERAVIMO FUNKCIJA SU PATAISYTA VERTIKALIA ALYNA ===
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Kraunama...</td></tr>';
@@ -308,14 +308,14 @@
 
             return `
                 <tr data-id="${entry.id}">
-                    <td>${entry.date}</td>
-                    <td class="arrow-cell ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
-                    <td class="token-cell">${displayToken}</td>
-                    <td>${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
-                    <td>$${(entry.rate_usd || 0).toFixed(5)}</td>
-                    <td>$${amount_usd.toFixed(2)}</td>
-                    <td>${entry.description || ''}</td>
-                    <td class="log-table-actions">
+                    <td class="align-middle">${entry.date}</td>
+                    <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
+                    <td class="token-cell align-middle">${displayToken}</td>
+                    <td class="align-middle">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+                    <td class="align-middle">$${(entry.rate_usd || 0).toFixed(5)}</td>
+                    <td class="align-middle">$${amount_usd.toFixed(2)}</td>
+                    <td class="align-middle">${entry.description || ''}</td>
+                    <td class="log-table-actions align-middle">
                         <button class="btn-edit">Taisyti</button>
                         <button class="btn-delete">Trinti</button>
                     </td>
