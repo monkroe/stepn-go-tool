@@ -92,11 +92,17 @@
             </div>
         </main>
     </div>
-    <!-- Pataisyta ir galutinė tvarka -->
-    <script src="js/supabase.js" defer></script>
-    <script src="js/auth.js" defer></script>
-    <script src="js/script.js" defer></script> <!-- Dirigentas -->
-    <script src="js/logger.js" defer></script> <!-- Modulis -->
-    <script src="js/converter.js" defer></script> <!-- Modulis -->
+<!-- TEISINGA TVARKA -->
+
+<!-- 1. Priklausomybės (Supabase biblioteka ir jos inicializavimas) -->
+<script src="js/supabase.js" defer></script>
+<script src="js/auth.js" defer></script>
+
+<!-- 2. Moduliai/Pagalbiniai failai (su duomenimis ir funkcijomis) -->
+<script src="js/logger.js" defer></script>
+<script src="js/converter.js" defer></script>
+
+<!-- 3. Pagrindinis scenarijus ("Dirigentas"), kuris viską naudoja -->
+<script src="js/script.js" defer></script> 
 </body>
 </html>
