@@ -106,6 +106,7 @@ table {
     width: 100%; 
     margin-top: 1rem; 
     border-collapse: collapse; 
+    overflow-x: auto; /* Added for horizontal scrolling on small screens */
 }
 
 th, td { 
@@ -114,6 +115,7 @@ th, td {
     font-size: 0.875rem; 
     vertical-align: middle; 
     border-bottom: 1px solid #4b5563; 
+    min-width: 100px; /* Ensures minimum width for readability */
 }
 
 th { 
@@ -191,7 +193,10 @@ tr:last-child td {
     display: flex;
     justify-content: center;
     align-items: center;
-    /* PAŠALINTAS width: 60px; kad lentelė nebūtų suspausta kompiuteryje */
+}
+
+.token-cell img {
+    margin-right: 0.5rem;
 }
 
 /* Stiliai ikonai konverterio kortelėje */
@@ -213,4 +218,14 @@ tr:last-child td {
 .log-table-actions {
     min-width: 80px;
     text-align: center;
+}
+
+@media (max-width: 640px) {
+    table {
+        display: block;
+        overflow-x: auto;
+    }
+    th, td {
+        min-width: 120px;
+    }
 }
