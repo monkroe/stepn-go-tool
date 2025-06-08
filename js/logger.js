@@ -1,4 +1,4 @@
-// Failas: js/logger.js (GALUTINĖ VERSIJA, kuri sutvarko lentelės išsidėstymą)
+// Failas: js/logger.js (Pataisyta versija su teisingomis rodyklėmis)
 
 (function() {
     'use strict';
@@ -300,11 +300,15 @@
             
             const tokenInfo = window.appData.tokens[entry.token];
             
+            // === PAKEITIMAS ČIA: Sukeistos rodyklės vietomis ===
+            // Jei pajamos (isIncome), rodyklė bus į viršų (▲), jei išlaidos - į apačią (▼).
+            const arrow = isIncome ? '▲' : '▼';
+
             // Generuojame HTML eilutę kaip vientisą tekstą su visais 8 langeliais.
             return `
                 <tr data-id="${entry.id}">
                     <td>${entry.date}</td>
-                    <td style="font-size: 1.25rem; text-align: center;" class="${isIncome ? 'income-color' : 'expense-color'}">${isIncome ? '▼' : '▲'}</td>
+                    <td style="font-size: 1.25rem; text-align: center;" class="${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
                     <td class="token-cell">
                         ${tokenInfo ? `<img src="${tokenInfo.logo}" alt="${tokenInfo.symbol}" class="table-token-logo">` : entry.token.toUpperCase()}
                     </td>
