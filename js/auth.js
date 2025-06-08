@@ -1,3 +1,4 @@
+// Failas: auth.js (Versija su patikimu puslapio perkrovimu po atsijungimo)
 
 const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
@@ -14,14 +15,15 @@ supabase.auth.onAuthStateChange((_event, session) => {
 loginBtn.addEventListener('click', () => {
   supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: {
-      redirectTo: location.href
-    }
   });
 });
 
-logoutBtn.addEventListener('click', () => {
-  supabase.auth.signOut();
+// === PATAISYMAS ===
+// Dabar atsijungimas ne tik išvalo sesiją, bet ir perkrauna puslapį,
+// kad būtų užtikrinta švari programėlės būsena.
+logoutBtn.addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  window.location.reload();
 });
 
 function updateAuthUI(session) {
