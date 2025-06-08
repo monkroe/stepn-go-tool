@@ -1,4 +1,4 @@
-// Failas: js/script.js (Pataisyta versija)
+// Failas: js/script.js (Pataisyta versija - ištaisytas duomenų saugojimas)
 (function() {
     'use strict';
     
@@ -13,7 +13,8 @@
             'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' }
         },
         prices: {},
-        initialized: false
+        initialized: false,
+        converterInitialized: false
     };
 
     // Initialize global actions object
@@ -24,23 +25,37 @@
     // Bendra inicializavimo funkcija
     async function init() {
         try {
+            console.log('Starting app initialization...');
+            
             // Setup tab listeners
-            document.getElementById('tab-btn-logger').addEventListener('click', () => switchTab('logger'));
-            document.getElementById('tab-btn-converter').addEventListener('click', () => switchTab('converter'));
+            const loggerBtn = document.getElementById('tab-btn-logger');
+            const converterBtn = document.getElementById('tab-btn-converter');
+            
+            if (loggerBtn) loggerBtn.addEventListener('click', () => switchTab('logger'));
+            if (converterBtn) converterBtn.addEventListener('click', () => switchTab('converter'));
             
             // Fetch prices first
+            console.log('Fetching initial prices...');
             await fetchLiveTokenPrices(true);
             
             // Mark as initialized
             window.appData.initialized = true;
+            console.log('App data initialized, prices:', window.appData.prices);
 
             // INICIALIZUOJAME KITUS MODULIUS
             if (typeof window.appActions.initLogger === 'function') {
+                console.log('Initializing logger...');
                 await window.appActions.initLogger();
             }
+            
             if (typeof window.appActions.initConverter === 'function') {
+                console.log('Initializing converter...');
                 await window.appActions.initConverter();
+                window.appData.converterInitialized = true;
             }
+            
+            // Show converter tab by default
+            switchTab('converter');
             
             console.log('App initialized successfully');
         } catch (error) {
@@ -71,15 +86,20 @@
             const data = await response.json();
             console.log('Received price data:', data);
             
-            // Set USD as base currency
-            window.appData.prices['usd-coin'] = { price: 1, change: 0 };
+            // SVARBU: Pridėkime USD kaip bazinę valiutą su raktu 'usd'
+            window.appData.prices['usd'] = { price: 1, change: 0 };
             
-            // Update prices
+            // Update prices - saugome pagal apiId
             for (const apiId in data) { 
                 window.appData.prices[apiId] = { 
                     price: data[apiId].usd, 
                     change: data[apiId].usd_24h_change || 0 
                 }; 
+            }
+            
+            // Taip pat pridėkime USDC su fiksuotu kursu
+            if (window.appData.prices['usd-coin']) {
+                window.appData.prices['usd-coin'] = { price: 1.0, change: 0 };
             }
             
             console.log('Updated prices:', window.appData.prices);
@@ -88,14 +108,16 @@
             if (window.appData.initialized && 
                 window.appActions && 
                 typeof window.appActions.updateConverterUI === 'function') {
+                console.log('Updating converter UI...');
                 window.appActions.updateConverterUI();
             }
             
         } catch (error) { 
             console.error("Klaida gaunant realaus laiko kainas:", error);
             // Show user-friendly error message
-            if (document.getElementById('converter-grid')) {
-                document.getElementById('converter-grid').innerHTML = 
+            const converterGrid = document.getElementById('converter-grid');
+            if (converterGrid) {
+                converterGrid.innerHTML = 
                     '<div class="error-message">Klaida gaunant kainų duomenis. Bandykite vėliau.</div>';
             }
         }
@@ -138,6 +160,8 @@
     }
 
     function switchTab(tabName) {
+        console.log('Switching to tab:', tabName);
+        
         // Hide all tab contents
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.remove('active');
@@ -152,17 +176,39 @@
         const targetContent = document.getElementById(`tab-content-${tabName}`);
         const targetButton = document.getElementById(`tab-btn-${tabName}`);
         
-        if (targetContent) targetContent.classList.add('active');
-        if (targetButton) targetButton.classList.add('active');
+        if (targetContent) {
+            targetContent.classList.add('active');
+            console.log('Activated tab content:', tabName);
+        } else {
+            console.warn('Tab content not found:', `tab-content-${tabName}`);
+        }
+        
+        if (targetButton) {
+            targetButton.classList.add('active');
+        } else {
+            console.warn('Tab button not found:', `tab-btn-${tabName}`);
+        }
         
         // If switching to converter tab, make sure it's initialized
         if (tabName === 'converter' && 
             typeof window.appActions.initConverter === 'function' && 
             !window.appData.converterInitialized) {
+            console.log('Late initializing converter...');
             window.appActions.initConverter();
+            window.appData.converterInitialized = true;
         }
     }
     
     // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', init);
+    
+    // Expose debug functions for development
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        window.appDebug = {
+            data: () => window.appData,
+            actions: () => window.appActions,
+            reinit: init,
+            fetchPrices: () => fetchLiveTokenPrices(true)
+        };
+    }
 })();
