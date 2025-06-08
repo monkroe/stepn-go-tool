@@ -64,17 +64,19 @@ tr:last-child td { border-bottom: none; }
     justify-content: center; /* Centruoja horizontaliai */
     align-items: center;    /* Centruoja vertikaliai */
     
-    /* Galima nustatyti fiksuotą plotį, kad stulpelis būtų tvarkingas */
+    /* Suteikiame fiksuotą plotį, kad stulpelis būtų tvarkingas */
     width: 60px;
+    padding-top: 0.5rem; /* Atstatome padding, kad atitiktų kitus langelius */
+    padding-bottom: 0.5rem;
 }
 
 /* Stilius pačiai ikonai */
 .table-token-logo {
-    width: 22px;         /* Mažesnis plotis */
-    height: 22px;        /* Mažesnis aukštis */
+    width: 24px;         /* Šiek tiek didesnė ikona, atrodys geriau */
+    height: 24px;
     
     /* ŠI EILUTĖ PADARO IKONAS APVALIAS */
     border-radius: 50%;
     
-    object-fit: contain; /* Neleidžia paveikslėliui išsikraipyti */
+    object-fit: cover; /* Naudojame 'cover', kad apvalios ikonos geriau užpildytų rėmus */
 }
