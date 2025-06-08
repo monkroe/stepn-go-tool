@@ -1,4 +1,4 @@
-// Failas: js/logger.js (GALUTINĖ VERSIJA, kuri sutvarko lentelės išsidėstymą)
+// Failas: js/logger.js (GALUTINĖ VERSIJA, kuri sutvarko lentelės išdėstymą)
 
 (function() {
     'use strict';
@@ -288,8 +288,7 @@
         
         let totalIncomeUSD = 0, totalExpenseUSD = 0; 
         const tokenBalances = {};
-
-        data.forEach(entry => {
+        const rowsHTML = data.map(entry => {
             const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
             const isIncome = entry.type === 'income';
             
@@ -299,31 +298,29 @@
             tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
             
             const tokenInfo = window.appData.tokens[entry.token];
-            const row = document.createElement('tr');
-            row.dataset.id = entry.id;
-
-            // Generuojame HTML eilutę vienu ypu, kad išvengtume klaidų.
-            // Trečias langelis (`<td>`) dabar turi savo turinį, apibrėžtą tiesiogiai.
-            row.innerHTML = `
-                <td>${entry.date}</td>
-                <td style="font-size: 1.25rem; text-align: center;" class="${isIncome ? 'income-color' : 'expense-color'}">${isIncome ? '▼' : '▲'}</td>
-                
-                <td class="token-cell">
-                    ${tokenInfo ? `<img src="${tokenInfo.logo}" alt="${tokenInfo.symbol}" class="table-token-logo">` : entry.token.toUpperCase()}
-                </td>
-
-                <td>${(entry.token_amount || 0).toLocaleString('en-US', {maximumFractionDigits: 2})}</td>
-                <td>$${(entry.rate_usd || 0).toFixed(5)}</td>
-                <td>$${amount_usd.toFixed(2)}</td>
-                <td>${entry.description || ''}</td>
-                <td class="log-table-actions">
-                    <button class="btn-edit">Taisyti</button>
-                    <button class="btn-delete">Trinti</button>
-                </td>
+            
+            // Generuojame HTML eilutę kaip vientisą tekstą, kad išvengtume klaidų.
+            // Visada turėsime 8 langelius (<td>).
+            return `
+                <tr data-id="${entry.id}">
+                    <td>${entry.date}</td>
+                    <td style="font-size: 1.25rem; text-align: center;" class="${isIncome ? 'income-color' : 'expense-color'}">${isIncome ? '▼' : '▲'}</td>
+                    <td class="token-cell">
+                        ${tokenInfo ? `<img src="${tokenInfo.logo}" alt="${tokenInfo.symbol}" class="table-token-logo">` : entry.token.toUpperCase()}
+                    </td>
+                    <td>${(entry.token_amount || 0).toLocaleString('en-US', {maximumFractionDigits: 2})}</td>
+                    <td>$${(entry.rate_usd || 0).toFixed(5)}</td>
+                    <td>$${amount_usd.toFixed(2)}</td>
+                    <td>${entry.description || ''}</td>
+                    <td class="log-table-actions">
+                        <button class="btn-edit">Taisyti</button>
+                        <button class="btn-delete">Trinti</button>
+                    </td>
+                </tr>
             `;
-            loggerElements.logTableBody.appendChild(row);
-        });
+        }).join('');
         
+        loggerElements.logTableBody.innerHTML = rowsHTML;
         renderSummary(totalIncomeUSD, totalExpenseUSD, tokenBalances);
     }
     
