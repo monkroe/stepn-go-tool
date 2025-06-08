@@ -1,4 +1,4 @@
-/* Failas: style.css (GALUTINĖ, PATAISYTA VERSIJA su JŪSŲ SPRENDIMU) */
+/* Failas: style.css (GALUTINĖ, PILNA VERSIJA) */
 
 body { 
     font-family: 'Inter', sans-serif; 
@@ -191,7 +191,7 @@ tr:last-child td {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 60px;
+    /* PAŠALINTAS width: 60px; kad lentelė nebūtų suspausta kompiuteryje */
 }
 
 /* Stiliai ikonai konverterio kortelėje */
@@ -207,4 +207,10 @@ tr:last-child td {
     width: 20px;
     height: 20px;
     border-radius: 50%;
+}
+
+/* Stilius veiksmų stulpeliui, kad mygtukai visada turėtų vietos */
+.log-table-actions {
+    min-width: 80px;
+    text-align: center;
 }
