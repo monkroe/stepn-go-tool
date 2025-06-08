@@ -3,16 +3,16 @@
     'use strict';
     
     // Sukuriame globalius objektus, kuriuos naudos kiti moduliai
-    window.appData = {
-        tokens: {
-            'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', historyApiId: 'stepn', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/18069.png' },
-            'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', historyApiId: 'go-game-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/31191.png' },
-            'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', historyApiId: 'green-satoshi-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/16353.png' },
-            'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', historyApiId: 'solana', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
-            'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', historyApiId: 'usd-coin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png', fixedPrice: 1.0 },
-            'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' }
-        },
-        prices: {},
+window.appData = {
+    tokens: {
+        'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', historyApiId: 'stepn', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/18069.png' },
+        'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', historyApiId: 'go-game-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/31191.png' },
+        'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', historyApiId: 'green-satoshi-token', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/16353.png' },
+        'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', historyApiId: 'solana', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
+        'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', historyApiId: 'usd-coin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png', fixedPrice: 1.0 },
+        'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', historyApiId: 'tether', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png', fixedPrice: 1.0 }, // <-- PRIDĖTA EILUTĖ
+        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' }
+    },
         initialized: false,
         converterInitialized: false
     };
