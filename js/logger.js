@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Pataisyta versija be ikonų)
+// Failas: js/logger.js (Pataisyta versija su paprastesne lentelės struktūra)
 
 (function() {
     'use strict';
@@ -276,7 +276,7 @@
         loggerElements.filterToken.value = currentValue;
     }
 
-    // === PATAISYTA LENTELĖS GENERAVIMO FUNKCIJA BE IKONŲ ===
+    // === PATAISYTA LENTELĖS GENERAVIMO FUNKCIJA SU PAPRASTESNE STRUKTŪRA ===
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Kraunama...</td></tr>';
@@ -306,9 +306,7 @@
                 <tr data-id="${entry.id}">
                     <td>${entry.date}</td>
                     <td class="arrow-cell ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
-                    <td class="token-cell">
-                        ${tokenInfo ? tokenInfo.symbol : entry.token.toUpperCase()}
-                    </td>
+                    <td class="token-cell">${tokenInfo ? tokenInfo.symbol : entry.token.toUpperCase()}</td>
                     <td>${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
                     <td>$${(entry.rate_usd || 0).toFixed(5)}</td>
                     <td>$${amount_usd.toFixed(2)}</td>
