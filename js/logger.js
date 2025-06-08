@@ -308,7 +308,7 @@
             return `
                 <tr data-id="${entry.id}">
                     <td>${entry.date}</td>
-                    <td style="font-size: 1.25rem; text-align: center;" class="${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
+                    <td class="arrow-cell ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
                     <td class="token-cell">
                         ${tokenInfo ? `<img src="${tokenInfo.logo}" alt="${tokenInfo.symbol}" class="table-token-logo">` : entry.token.toUpperCase()}
                     </td>
