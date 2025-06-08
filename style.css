@@ -180,22 +180,22 @@ tr:last-child td {
     overflow-x: auto;
 }
 
-/* Bendri stiliai ikonoms */
+/* Bendri stiliai ikonoms (liko tik radijo mygtukams) */
 .table-token-logo,
 .converter-card .token-logo {
     width: 24px;
     height: 24px;
     border-radius: 50%;
     object-fit: cover;
-    vertical-align: middle; /* Ensures icons align with text */
+    vertical-align: middle;
 }
 
-/* Stiliai ikonoms transakcijų sąraše */
+/* Stiliai ikonoms transakcijų sąraše (dabar nereikalingas, bet paliekamas kitur) */
 .token-cell {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0.5rem; /* Added padding for consistent spacing */
+    padding: 0.5rem;
 }
 
 .token-cell img {
