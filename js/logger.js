@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Galutinė versija su mažomis, apvaliomis ikonomis lentelėje)
+// Failas: js/logger.js (GALUTINĖ VERSIJA, kuri sutvarko lentelės išsidėstymą)
 
 (function() {
     'use strict';
@@ -276,11 +276,11 @@
         loggerElements.filterToken.value = currentValue;
     }
 
-    // === ATNAUJINTA LENTELĖS GENERAVIMO FUNKCIJA ===
+    // === PATIKIMESNĖ LENTELĖS GENERAVIMO FUNKCIJA ===
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '';
-        if(!data || data.length === 0) {
+        if (!data || data.length === 0) {
             loggerElements.logTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4">Įrašų nerasta.</td></tr>`;
             renderSummary(0, 0, {});
             return;
@@ -297,30 +297,21 @@
             
             if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
             tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
-
-            // === PAKEITIMAS: Generuojame HTML TIK su paveikslėliu ===
-            const tokenInfo = window.appData.tokens[entry.token];
-            let tokenCellHTML = '';
-
-            if (tokenInfo) {
-                // Paliekame tik <img> žymą, be teksto
-                tokenCellHTML = `
-                    <td class="token-cell">
-                        <img src="${tokenInfo.logo}" alt="${tokenInfo.symbol}" class="table-token-logo">
-                    </td>
-                `;
-            } else {
-                // Atsarginis variantas, jei žetonas nerastas
-                tokenCellHTML = `<td>${entry.token.toUpperCase()}</td>`;
-            }
             
+            const tokenInfo = window.appData.tokens[entry.token];
             const row = document.createElement('tr');
             row.dataset.id = entry.id;
 
+            // Generuojame HTML eilutę vienu ypu, kad išvengtume klaidų.
+            // Trečias langelis (`<td>`) dabar turi savo turinį, apibrėžtą tiesiogiai.
             row.innerHTML = `
                 <td>${entry.date}</td>
                 <td style="font-size: 1.25rem; text-align: center;" class="${isIncome ? 'income-color' : 'expense-color'}">${isIncome ? '▼' : '▲'}</td>
-                ${tokenCellHTML}
+                
+                <td class="token-cell">
+                    ${tokenInfo ? `<img src="${tokenInfo.logo}" alt="${tokenInfo.symbol}" class="table-token-logo">` : entry.token.toUpperCase()}
+                </td>
+
                 <td>${(entry.token_amount || 0).toLocaleString('en-US', {maximumFractionDigits: 2})}</td>
                 <td>$${(entry.rate_usd || 0).toFixed(5)}</td>
                 <td>$${amount_usd.toFixed(2)}</td>
