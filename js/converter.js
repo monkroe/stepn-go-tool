@@ -1,4 +1,4 @@
-// Failas: js/converter.js (Pataisyta versija - rodomi USDC ir USDT)
+// Failas: js/converter.js (Pataisyta versija su specifine rikiavimo tvarka)
 
 (function() {
     'use strict';
@@ -40,19 +40,26 @@
         }
     }
 
+    // === PATAISYTA FUNKCIJA SU NAUJA RIKIAVIMO LOGIKA ===
     function generateConverterCards() {
         if (!elements['converter-grid']) return;
         
-        // Dabar tiesiog paimame visus žetonus iš konfigūracijos. Jokių dirbtinių USD!
+        // 1. Sukuriame sąrašą su norima rikiavimo tvarka pagal žetonų 'key'.
+        const displayOrder = ['usdc', 'gmt', 'ggt', 'gst', 'sol', 'pol', 'bnb', 'btc', 'usdt'];
+
         const tokensToDisplay = Object.values(ALL_TOKENS_CONFIG);
 
-        // Rikiuojame, kad stablecoin'ai (USDC, USDT) būtų viršuje.
+        // 2. Rikiuojame žetonus pagal 'displayOrder' sąrašą.
         tokensToDisplay.sort((a, b) => {
-            const isAStable = a.fixedPrice === 1.0;
-            const isBStable = b.fixedPrice === 1.0;
-            if (isAStable && !isBStable) return -1;
-            if (!isAStable && isBStable) return 1;
-            return a.symbol.localeCompare(b.symbol);
+            const indexA = displayOrder.indexOf(a.key);
+            const indexB = displayOrder.indexOf(b.key);
+
+            // Jei žetono nėra sąraše, nusiunčiame jį į galą.
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            
+            // Rikiuojame pagal indeksą sąraše.
+            return indexA - indexB;
         });
         
         const html = tokensToDisplay.map(token => createTokenCardHTML(token)).join('');
@@ -88,9 +95,7 @@
             </div>`;
     }
     
-    // Visos likusios funkcijos lieka praktiškai tokios pačios,
-    // nes jos jau buvo gerai parašytos ir rėmėsi konfigūracijos duomenimis.
-
+    // Likusios funkcijos lieka nepakeistos
     function updateConverterPricesUI() {
         if (!window.appData?.prices) return;
         liveTokenPrices = window.appData.prices;
@@ -103,25 +108,20 @@
     function updateSingleCardPrice(card, tokenKey) {
         const tokenConfig = ALL_TOKENS_CONFIG[tokenKey];
         if (!tokenConfig) return;
-
         const priceData = liveTokenPrices[tokenConfig.apiId];
         const priceEl = card.querySelector(`#price-${tokenKey}`);
         const changeEl = card.querySelector(`#change-${tokenKey}`);
         const timeEl = card.querySelector(`#time-${tokenKey}`);
-
         let price = 'N/A';
         let change = 0;
-
         if (tokenConfig.fixedPrice) {
             price = tokenConfig.fixedPrice;
         } else if (priceData && typeof priceData.price !== 'undefined') {
             price = priceData.price;
             change = priceData.change || 0;
         }
-        
         priceEl.textContent = price !== 'N/A' ? `$${price >= 1 ? price.toFixed(2) : price.toFixed(6)}` : 'N/A';
         updatePriceChange(changeEl, change);
-
         if (timeEl) {
             timeEl.textContent = `Atnaujinta: ${new Date().toLocaleTimeString('lt-LT')}`;
         }
