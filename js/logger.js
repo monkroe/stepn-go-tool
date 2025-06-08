@@ -1,24 +1,16 @@
-// Failas: js/logger.js (Pataisyta versija - pridedami logotipai į lentelę)
+// Failas: js/logger.js (Galutinė versija su mažomis, apvaliomis ikonomis lentelėje)
 
 (function() {
     'use strict';
     
     const CATEGORIES = {
         go: {
-            income: { 
-                "GGT Earnings": "GGT Uždarbis", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" 
-            },
-            expense: { 
-                "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" 
-            }
+            income: { "GGT Earnings": "GGT Uždarbis", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
+            expense: { "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" }
         },
         og: {
-            income: { 
-                "GST Earnings": "GST Uždarbis", "Sneaker Sale": "Sportbačio pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" 
-            },
-            expense: { 
-                "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" 
-            }
+            income: { "GST Earnings": "GST Uždarbis", "Sneaker Sale": "Sportbačio pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
+            expense: { "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" }
         }
     };
 
@@ -284,7 +276,7 @@
         loggerElements.filterToken.value = currentValue;
     }
 
-    // === PATAISYTA FUNKCIJA, KURI SUKURIA LENTELĘS EILUTES ===
+    // === ATNAUJINTA LENTELĖS GENERAVIMO FUNKCIJA ===
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '';
@@ -306,22 +298,22 @@
             if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
             tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
 
-            // === PRADŽIA: PAKEITIMAS ČIA ===
+            // === PAKEITIMAS: Generuojame HTML TIK su paveikslėliu ===
             const tokenInfo = window.appData.tokens[entry.token];
             let tokenCellHTML = '';
 
             if (tokenInfo) {
+                // Paliekame tik <img> žymą, be teksto
                 tokenCellHTML = `
                     <td class="token-cell">
                         <img src="${tokenInfo.logo}" alt="${tokenInfo.symbol}" class="table-token-logo">
-                        <span>${tokenInfo.symbol}</span>
                     </td>
                 `;
             } else {
+                // Atsarginis variantas, jei žetonas nerastas
                 tokenCellHTML = `<td>${entry.token.toUpperCase()}</td>`;
             }
-            // === PABAIGA: PAKEITIMAS ČIA ===
-
+            
             const row = document.createElement('tr');
             row.dataset.id = entry.id;
 
