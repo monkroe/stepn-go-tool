@@ -19,7 +19,6 @@ window.appData = {
     initialized: false,
     converterInitialized: false
 };
-
    // Initialize global actions object
     window.appActions = window.appActions || {};
     window.appActions.fetchPrices = fetchLiveTokenPrices;
