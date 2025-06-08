@@ -11,14 +11,16 @@ window.appData = {
         'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', historyApiId: 'solana', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
         'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', historyApiId: 'usd-coin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png', fixedPrice: 1.0 },
         'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', historyApiId: 'tether', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png', fixedPrice: 1.0 },
-        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' }
+        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
+        'pol': { key: 'pol', symbol: 'POL', apiId: 'polygon-ecosystem-token', historyApiId: 'polygon-ecosystem-token', logo: 'https://assets.coingecko.com/coins/images/31533/standard/token-logo-pol.png' }, // <-- NAUJAS
+        'bnb': { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', historyApiId: 'binancecoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png' }  // <-- NAUJAS
     },
     prices: {},
     initialized: false,
     converterInitialized: false
 };
 
-    // Initialize global actions object
+   // Initialize global actions object
     window.appActions = window.appActions || {};
     window.appActions.fetchPrices = fetchLiveTokenPrices;
     window.appActions.getPriceForDate = getPriceForDate;
