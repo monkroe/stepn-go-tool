@@ -1,68 +1,39 @@
-// Failas: js/logger.js (Pataisyta ir galutinė versija)
+// Failas: js/logger.js (Pataisyta versija - pridedami logotipai į lentelę)
 
 (function() {
     'use strict';
     
-    // Kategorijų objektas, viskas gerai
     const CATEGORIES = {
         go: {
             income: { 
-                "GGT Earnings": "GGT Uždarbis",
-                "Gem Sale": "Brangakmenių pardavimas",
-                "Other": "Kita" 
+                "GGT Earnings": "GGT Uždarbis", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" 
             },
             expense: { 
-                "Level-up": "Lygio kėlimas", 
-                "Minting": "Mintinimas", 
-                "Mystery Box opening": "Dėžutės atidarymas",
-                "Other": "Kita" 
+                "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" 
             }
         },
         og: {
             income: { 
-                "GST Earnings": "GST Uždarbis", 
-                "Sneaker Sale": "Sportbačio pardavimas",
-                "Gem Sale": "Brangakmenių pardavimas",
-                "Other": "Kita" 
+                "GST Earnings": "GST Uždarbis", "Sneaker Sale": "Sportbačio pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" 
             },
             expense: { 
-                "Level-up": "Lygio kėlimas", 
-                "Minting": "Mintinimas", 
-                "Mystery Box opening": "Dėžutės atidarymas",
-                "Other": "Kita" 
+                "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" 
             }
         }
     };
 
     const loggerElements = {};
 
-    // Priskiriame funkcijas globaliam objektui, viskas gerai
     window.appActions = window.appActions || {};
     window.appActions.initLogger = initLogger;
     window.appActions.loadAndRenderLogTable = loadAndRenderLogTable;
     window.appActions.renderLogTable = renderLogTable;
 
-    // === PATAISYTA INICIALIZAVIMO FUNKCIJA ===
-    // Čia buvo pagrindinė problema. Dabar funkcijos kviečiamos logiška tvarka.
     function initLogger() {
-        console.log('Logger is initializing...');
-
-        // 1. Pirmiausia surandame visus reikalingus HTML elementus.
         cacheLoggerElements();
-        
-        // 2. Nustatome formą į pradinę, švarią būseną. Ši funkcija viduje
-        // pati iškviečia updateDynamicForm(), kuri teisingai nustatys visus laukus
-        // pagal tuščias pradines reikšmes (pvz., išjungs kategorijų laukelį).
         resetLogForm();
-
-        // 3. Dabar, kai forma yra paruošta, priskiriame visus įvykių klausytojus.
-        // Jie reaguos į vartotojo veiksmus.
         bindLoggerEventListeners();
-        
-        // 4. Galiausiai, užkrauname duomenis iš duomenų bazės ir atvaizduojame lentelę.
         loadAndRenderLogTable();
-        
-        console.log('Logger initialized successfully.');
     }
 
     function cacheLoggerElements() {
@@ -215,12 +186,9 @@
             loggerElements.logForm.reset();
             delete loggerElements.logForm.dataset.editingId;
             delete loggerElements.logForm.dataset.oldEntry;
-            loggerElements.platform.value = ""; // Nustatome tuščią reikšmę
-            loggerElements.logType.value = ""; // Nustatome tuščią reikšmę
-            
-            // Iškviečiame formos atnaujinimą, kad kategorijos būtų išvalytos ir laukai paslėpti
+            loggerElements.platform.value = "";
+            loggerElements.logType.value = "";
             updateDynamicForm();
-            
             const today = new Date();
             today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
             loggerElements.logDate.value = today.toISOString().split('T')[0];
@@ -236,27 +204,16 @@
 
     function updateCategoryDropdown() {
         if (!loggerElements.platform || !loggerElements.logType || !loggerElements.logCategory) return;
-        
         const platform = loggerElements.platform.value;
         const type = loggerElements.logType.value;
         const platformCategories = CATEGORIES[platform]?.[type] || {};
-        
-        const currentCategoryValue = loggerElements.logCategory.value;
-        
+        const currentCategory = loggerElements.logCategory.value;
         let optionsHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
         optionsHTML += Object.entries(platformCategories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
-        
         loggerElements.logCategory.innerHTML = optionsHTML;
-
-        // Išjungiame kategorijų laukelį, jei nėra ką rinktis
+        if (platformCategories[currentCategory]) loggerElements.logCategory.value = currentCategory;
+        else loggerElements.logCategory.value = "";
         loggerElements.logCategory.disabled = Object.keys(platformCategories).length === 0;
-
-        // Pabandoma palikti seną reikšmę, jei ji vis dar egzistuoja naujame sąraše
-        if (platformCategories[currentCategoryValue]) {
-            loggerElements.logCategory.value = currentCategoryValue;
-        } else {
-            loggerElements.logCategory.value = ""; // Išvalome, jei seno pasirinkimo nebėra
-        }
     }
 
     function updateVisibleFields() {
@@ -327,6 +284,7 @@
         loggerElements.filterToken.value = currentValue;
     }
 
+    // === PATAISYTA FUNKCIJA, KURI SUKURIA LENTELĘS EILUTES ===
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '';
@@ -335,17 +293,54 @@
             renderSummary(0, 0, {});
             return;
         }
-        let totalIncomeUSD = 0, totalExpenseUSD = 0; const tokenBalances = {};
+        
+        let totalIncomeUSD = 0, totalExpenseUSD = 0; 
+        const tokenBalances = {};
+
         data.forEach(entry => {
             const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
             const isIncome = entry.type === 'income';
+            
             if (isIncome) totalIncomeUSD += amount_usd; else totalExpenseUSD += amount_usd;
+            
             if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
             tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
-            const row = document.createElement('tr'); row.dataset.id = entry.id;
-            row.innerHTML = `<td>${entry.date}</td><td style="font-size: 1.25rem; text-align: center;" class="${isIncome ? 'income-color' : 'expense-color'}">${isIncome ? '▼' : '▲'}</td><td>${window.appData.tokens[entry.token]?.symbol || entry.token.toUpperCase()}</td><td>${(entry.token_amount || 0).toLocaleString('en-US', {maximumFractionDigits: 2})}</td><td>$${(entry.rate_usd || 0).toFixed(5)}</td><td>$${amount_usd.toFixed(2)}</td><td>${entry.description || ''}</td><td class="log-table-actions"><button class="btn-edit">Taisyti</button><button class="btn-delete">Trinti</button></td>`;
+
+            // === PRADŽIA: PAKEITIMAS ČIA ===
+            const tokenInfo = window.appData.tokens[entry.token];
+            let tokenCellHTML = '';
+
+            if (tokenInfo) {
+                tokenCellHTML = `
+                    <td class="token-cell">
+                        <img src="${tokenInfo.logo}" alt="${tokenInfo.symbol}" class="table-token-logo">
+                        <span>${tokenInfo.symbol}</span>
+                    </td>
+                `;
+            } else {
+                tokenCellHTML = `<td>${entry.token.toUpperCase()}</td>`;
+            }
+            // === PABAIGA: PAKEITIMAS ČIA ===
+
+            const row = document.createElement('tr');
+            row.dataset.id = entry.id;
+
+            row.innerHTML = `
+                <td>${entry.date}</td>
+                <td style="font-size: 1.25rem; text-align: center;" class="${isIncome ? 'income-color' : 'expense-color'}">${isIncome ? '▼' : '▲'}</td>
+                ${tokenCellHTML}
+                <td>${(entry.token_amount || 0).toLocaleString('en-US', {maximumFractionDigits: 2})}</td>
+                <td>$${(entry.rate_usd || 0).toFixed(5)}</td>
+                <td>$${amount_usd.toFixed(2)}</td>
+                <td>${entry.description || ''}</td>
+                <td class="log-table-actions">
+                    <button class="btn-edit">Taisyti</button>
+                    <button class="btn-delete">Trinti</button>
+                </td>
+            `;
             loggerElements.logTableBody.appendChild(row);
         });
+        
         renderSummary(totalIncomeUSD, totalExpenseUSD, tokenBalances);
     }
     
