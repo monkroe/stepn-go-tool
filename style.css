@@ -225,4 +225,14 @@ td:nth-child(7) {
     font-weight: 600;
     font-size: 1.25rem;
 }
+/* ================================================ */
+/* Stilius ikonoms transakcijų lentelėje        */
+/* ================================================ */
+
+.token-icon-table {
+    width: 24px;
+    height: 24px;
+    /* Sulygiuoja ikoną eilutės viduryje pagal aukštį */
+    vertical-align: middle; 
+}
 
