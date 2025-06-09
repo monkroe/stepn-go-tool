@@ -206,4 +206,23 @@ td:nth-child(7) {
 .price-down { color: #f87171; }
 .converter-card .update-time { font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; }
 .filter-section { background-color: #111827; padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; align-items: end; }
+/* ================================================ */
+/* KONVERTERIO IKONŲ PATAISYMAS          */
+/* ================================================ */
+
+/* Ši taisyklė nustato konverterio kortelėje esančios ikonos dydį ir padaro ją apvalią. */
+.converter-card .token-logo {
+    width: 32px;      /* Ikonos plotis */
+    height: 32px;     /* Ikonos aukštis */
+    border-radius: 50%; /* Užapvalina kampus, paversdama kvadratą apskritimu */
+}
+
+/* Papildoma taisyklė, užtikrinanti, kad ikona ir pavadinimas būtų gražiai sulygiuoti. */
+.converter-card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Tarpas tarp ikonos ir kriptovaliutos pavadinimo */
+    font-weight: 600;
+    font-size: 1.25rem;
+}
 
