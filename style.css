@@ -234,5 +234,6 @@ td:nth-child(7) {
     height: 24px;
     /* Sulygiuoja ikoną eilutės viduryje pagal aukštį */
     vertical-align: middle; 
+    border-radius: 50%;
 }
 
