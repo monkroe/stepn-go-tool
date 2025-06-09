@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Pataisyta versija su pataisyta lentelės struktūra)
+// Failas: js/logger.js (Pataisyta versija su ikonomis lentelėje)
 
 (function() {
     'use strict';
@@ -266,17 +266,7 @@
         populateFilterDropdowns(data);
     }
     
-    function populateFilterDropdowns(data) {
-        if (!loggerElements.filterToken) return;
-        const uniqueTokens = [...new Set(data.map(item => item.token))];
-        let optionsHTML = '<option value="">Visi</option>';
-        uniqueTokens.sort().forEach(token => { optionsHTML += `<option value="${token}">${window.appData.tokens[token]?.symbol || token.toUpperCase()}</option>`; });
-        const currentValue = loggerElements.filterToken.value;
-        loggerElements.filterToken.innerHTML = optionsHTML;
-        loggerElements.filterToken.value = currentValue;
-    }
-
-    // === PATAISYTA LENTELĖS GENERAVIMO FUNKCIJA SU PATAISYTA VERTIKALIA ALYNA ===
+    // === PAKEITIMAS PRASIDEDA ČIA: ATNAUJINTA LENTELĖS GENERAVIMO FUNKCIJA ===
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Kraunama...</td></tr>';
@@ -298,19 +288,22 @@
             if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
             tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
             
-            const tokenInfo = window.appData.tokens[entry.token];
-            let displayToken = tokenInfo ? tokenInfo.symbol : entry.token.toUpperCase();
-            if (displayToken === 'GST (SOL)') {
-                displayToken = 'GST'; // Remove (SOL) from GST
-            }
+            // Paruošiame HTML kodą žetono stulpeliui
+            const tokenKey = entry.token; // pvz., "gst"
+            const tokenSymbol = (window.appData.tokens[tokenKey]?.symbol || tokenKey.toUpperCase()).replace(' (SOL)', ''); // pvz., "GST"
+            const iconPath = `img/${tokenKey.toLowerCase()}.svg`;
             
+            // Sukuriame <img> žymą su atsarginiu variantu (onerror)
+            // Jei ikona neįsikels, vietoje jos bus parodytas simbolis (pvz., "GST")
+            const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
+
             const arrow = isIncome ? '▲' : '▼';
 
             return `
                 <tr data-id="${entry.id}">
                     <td class="align-middle">${entry.date}</td>
                     <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
-                    <td class="token-cell align-middle">${displayToken}</td>
+                    <td class="token-cell align-middle">${tokenCellHTML}</td>
                     <td class="align-middle">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
                     <td class="align-middle">$${(entry.rate_usd || 0).toFixed(5)}</td>
                     <td class="align-middle">$${amount_usd.toFixed(2)}</td>
@@ -326,6 +319,7 @@
         loggerElements.logTableBody.innerHTML = rowsHTML;
         renderSummary(totalIncomeUSD, totalExpenseUSD, tokenBalances);
     }
+    // === PAKEITIMAS BAIGIASI ČIA ===
     
     function renderSummary(income, expense, tokenBalances) {
         if (!loggerElements.summaryContainer) return;
@@ -362,3 +356,4 @@
     }
 
 })();
+
