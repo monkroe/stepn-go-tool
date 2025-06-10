@@ -247,4 +247,19 @@ td:nth-child(7) {
     object-fit: cover;  /* Gražiai pritaiko paveikslėlį rėmelyje */
     flex-shrink: 0;     /* Svarbu, kad ikona nesusispaustų šalia teksto */
 }
+/* ================================================ */
+/* Stilius datos skirtukams transakcijų lentelėje */
+/* ================================================ */
+
+.date-separator-row td {
+    background-color: #2d3748; /* Šiek tiek šviesesnis fonas nei lentelės */
+    color: #a0aec0;
+    font-weight: bold;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    text-align: center;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
 
