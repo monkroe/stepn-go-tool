@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Versija su filtravimu pagal kategoriją)
+// Failas: js/logger.js (Versija su dinamišku kategorijų filtru)
 
 (function() {
     'use strict';
@@ -24,7 +24,7 @@
 
     function initLogger() {
         cacheLoggerElements();
-        populateCategoryFilter();
+        updateCategoryFilter(); // Pakeista iš populateCategoryFilter
         resetLogForm();
         bindLoggerEventListeners();
         loadAndRenderLogTable();
@@ -57,33 +57,45 @@
         if (loggerElements.logTableBody) loggerElements.logTableBody.addEventListener('click', handleLogTableClick);
         if (loggerElements.filterBtn) loggerElements.filterBtn.addEventListener('click', loadAndRenderLogTable);
         if (loggerElements.exportCsvBtn) loggerElements.exportCsvBtn.addEventListener('click', handleExportToCsv);
-        if (loggerElements.platform) loggerElements.platform.addEventListener('change', updateDynamicForm);
+        if (loggerElements.platform) {
+            loggerElements.platform.addEventListener('change', () => {
+                updateDynamicForm();
+                updateCategoryFilter(); // Atnaujiname filtrą pasikeitus platformai
+            });
+        }
         if (loggerElements.logType) loggerElements.logType.addEventListener('change', updateDynamicForm);
         if (loggerElements.logCategory) loggerElements.logCategory.addEventListener('change', updateDynamicForm);
         if (loggerElements.editRateUsd) loggerElements.editRateUsd.addEventListener('input', () => syncEditInputs('rate'));
         if (loggerElements.editAmountUsd) loggerElements.editAmountUsd.addEventListener('input', () => syncEditInputs('amount'));
     }
 
-    function populateCategoryFilter() {
+    // === PAKEISTA FUNKCIJA ===
+    function updateCategoryFilter() {
         if (!loggerElements.filterCategory) return;
-        
-        const reverseCategoryMap = {};
+
+        const platform = loggerElements.platform.value;
         const allCategories = new Set();
-        
-        Object.keys(CATEGORIES).forEach(platform => {
-            Object.keys(CATEGORIES[platform]).forEach(type => {
-                Object.entries(CATEGORIES[platform][type]).forEach(([key, value]) => {
-                    if (!reverseCategoryMap[value]) {
-                        reverseCategoryMap[value] = key;
-                    }
-                    allCategories.add(value);
-                });
-            });
-        });
+        const reverseCategoryMap = {};
+
+        const processPlatform = (plat) => {
+            Object.values(CATEGORIES[plat].income).forEach(val => allCategories.add(val));
+            Object.values(CATEGORIES[plat].expense).forEach(val => allCategories.add(val));
+            Object.entries(CATEGORIES[plat].income).forEach(([key, value]) => { if (!reverseCategoryMap[value]) reverseCategoryMap[value] = key; });
+            Object.entries(CATEGORIES[plat].expense).forEach(([key, value]) => { if (!reverseCategoryMap[value]) reverseCategoryMap[value] = key; });
+        };
+
+        if (platform) { // Jei platforma pasirinkta
+            processPlatform(platform);
+            loggerElements.filterCategory.disabled = false;
+        } else { // Jei platforma nepasirinkta, rodome visas kategorijas
+            processPlatform('go');
+            processPlatform('og');
+            loggerElements.filterCategory.disabled = true; // Filtras neaktyvus
+        }
         
         const sortedCategories = [...allCategories].sort((a, b) => a.localeCompare(b));
-
         let optionsHTML = `<option value="">Visos</option>`;
+        
         sortedCategories.forEach(cat => {
             const key = reverseCategoryMap[cat] || cat;
             optionsHTML += `<option value="${key}">${cat}</option>`;
@@ -582,3 +594,4 @@
     }
     
 })();
+
