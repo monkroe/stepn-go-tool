@@ -1,4 +1,4 @@
-/* Failas: style.css (Pilna ir atnaujinta versija) */
+/* Failas: style.css (Pilna versija su dienos grynuoju balansu) */
 
 body {
     font-family: 'Inter', sans-serif;
@@ -220,7 +220,7 @@ td:nth-child(2) {
 .converter-card .update-time { font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; }
 .filter-section { background-color: #111827; padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; align-items: end; }
 
-/* === PASKUTINIAI PAKEITIMAI: DATOS SKIRTUKŲ STILIAI === */
+/* === PAKEITIMAS: DATOS SKIRTUKŲ STILIAI === */
 
 .date-separator-row td {
     background-color: #2d3748;
@@ -249,13 +249,25 @@ td:nth-child(2) {
     gap: 1rem;
     font-weight: bold;
     font-size: 0.9rem;
+    align-items: center; /* Sulygiuoja elementus vertikaliai */
 }
 
 .daily-income {
-    color: #34d399; /* income-color */
+    color: #34d399; /* Naudojama income-color */
 }
 
 .daily-expense {
-    color: #f87171; /* expense-color */
+    color: #f87171; /* Naudojama expense-color */
+}
+
+/* Naujas stilius dienos grynajam balansui */
+.daily-net {
+    font-weight: bold;
+    margin-left: 0.5rem; /* Mažesnis tarpas */
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.375rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid currentColor; /* Spalva paveldima iš income/expense-color */
+    font-size: 0.85rem;
 }
 
