@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Pataisyta versija, atkurianti prisijungimą ir transakcijas)
+// Failas: js/logger.js (STABILI VERSIJA, kurią reikia įkelti dabar)
 
 (function() {
     'use strict';
@@ -10,14 +10,7 @@
         },
         og: {
             income: { "GST Earnings": "GST Uždarbis", "Sneaker Sale": "Sportbačio pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
-            expense: { 
-                "Level-up": "Lygio kėlimas", 
-                "Repair": "Taisymas (HP)",
-                "Restore": "Atributų atkūrimas",
-                "Minting": "Mintinimas", 
-                "Mystery Box opening": "Dėžutės atidarymas", 
-                "Other": "Kita" 
-            }
+            expense: { "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" }
         }
     };
 
@@ -39,12 +32,11 @@
     function cacheLoggerElements() {
         const ids = [ 
             'logForm', 'platform', 'logDate', 'logType', 'logCategory', 'logDescription', 'logSubmitBtn', 
-            'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'ogRestoreFields', 'editFields', 
+            'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields', 
             'logTokenRadioGroup', 'logTokenAmount', 
             'goLevelUpGgt', 'goLevelUpGmt', 
             'ogLevelUpGst', 'ogLevelUpGmt', 
             'ogMintGst', 'ogMintGmt', 'ogMintScrolls',
-            'ogRestoreGst', 'ogRestoreGmt', 'ogRestoreGemsGmt',
             'editRateUsd', 'editAmountUsd', 
             'logTableBody', 'summaryContainer', 
             'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn', 'exportCsvBtn' 
@@ -114,14 +106,7 @@
             if (scrolls > 0) mintDesc += ` (Panaudota ${scrolls} Minting Scrolls)`;
             if (gst > 0) operations.push({ ...commonData, description: mintDesc, tokenKey: 'gst', tokenAmount: gst });
             if (gmt > 0) operations.push({ ...commonData, description: mintDesc, tokenKey: 'gmt', tokenAmount: gmt });
-        } else if (platform === 'og' && category === 'Restore') {
-            const gst = parseFloat(loggerElements.ogRestoreGst.value) || 0;
-            const gmtDirect = parseFloat(loggerElements.ogRestoreGmt.value) || 0;
-            const gmtGems = parseFloat(loggerElements.ogRestoreGemsGmt.value) || 0;
-            const totalGmt = gmtDirect + gmtGems;
-            if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
-            if (totalGmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: totalGmt });
-        } else { // Visi kiti standartiniai atvejai
+        } else {
             const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
             if (!selectedTokenRadio) throw new Error("Prašome pasirinkti žetoną.");
             const tokenAmount = parseFloat(loggerElements.logTokenAmount.value);
@@ -282,8 +267,9 @@
         const platform = loggerElements.platform.value;
         const category = loggerElements.logCategory.value;
         ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'ogRestoreFields', 'editFields'].forEach(id => { 
-            if (loggerElements[id]) {
-                loggerElements[id].classList.add('hidden'); 
+            const element = loggerElements[id];
+            if (element) {
+                element.classList.add('hidden'); 
             }
         });
 
@@ -303,11 +289,6 @@
             loggerElements.ogLevelUpFields.classList.remove('hidden');
         } else if (platform === 'og' && category === 'Minting') {
             loggerElements.ogMintFields.classList.remove('hidden');
-        } else if (platform === 'og' && category === 'Repair') {
-            loggerElements.standardFields.classList.remove('hidden');
-            updateTokenRadioButtons(['gst']);
-        } else if (platform === 'og' && category === 'Restore') {
-            loggerElements.ogRestoreFields.classList.remove('hidden');
         } else if (category) {
             loggerElements.standardFields.classList.remove('hidden');
             updateTokenRadioButtons(platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc']);
