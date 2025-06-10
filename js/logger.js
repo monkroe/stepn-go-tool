@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Pataisyta versija, kuri turėtų veikti)
+// Failas: js/logger.js (Pataisyta versija, atkurianti prisijungimą ir transakcijas)
 
 (function() {
     'use strict';
@@ -121,21 +121,19 @@
             const totalGmt = gmtDirect + gmtGems;
             if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
             if (totalGmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: totalGmt });
-        }
-        else {
+        } else { // Visi kiti standartiniai atvejai
             const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
             if (!selectedTokenRadio) throw new Error("Prašome pasirinkti žetoną.");
             const tokenAmount = parseFloat(loggerElements.logTokenAmount.value);
-            if (isNaN(tokenAmount) || tokenAmount <= 0) throw new Error("Prašome įvesti teigiamą sumą.");
-            operations.push({ ...commonData, tokenKey: selectedTokenRadio.value, tokenAmount });
+            if (!isNaN(tokenAmount) && tokenAmount > 0) {
+                operations.push({ ...commonData, tokenKey: selectedTokenRadio.value, tokenAmount });
+            }
         }
 
         if (operations.length === 0) {
-             const standardTokenAmount = parseFloat(loggerElements.logTokenAmount.value);
-            if (isNaN(standardTokenAmount) || standardTokenAmount <= 0) {
-                 throw new Error("Neįvesta jokia suma.");
-            }
+            throw new Error("Neįvesta jokia suma arba suma yra nulinė.");
         }
+        
         for (const op of operations) {
             await createSingleLogEntry(op);
         }
@@ -523,7 +521,7 @@
             downloadCsv(csvContent);
         } catch (error) {
             console.error("Įvyko klaida eksportuojant CSV:", error);
-            alert(`Eksportavimo klaida: ${error.message}\n\nPrašome patikrinti F12 konsolę detalesnei informacijai.`);
+            alert(`Eksportavimo klaida: ${error.message}`);
         }
     }
 
