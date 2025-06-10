@@ -269,4 +269,33 @@ td:nth-child(2) {
     border: 1px solid currentColor;
     font-size: 0.85rem;
 }
+/* === Akordeono stiliai === */
+
+/* Padaro datos eilutę paspaudžiamą */
+.date-separator-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.date-separator-row:hover {
+    background-color: #374151; /* Šiek tiek pašviesėja užvedus pelę */
+}
+
+/* Rodyklės ikona */
+.toggle-arrow {
+    display: inline-block;
+    margin-right: 0.75rem;
+    font-size: 0.8rem;
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Pasukame rodyklę, kai eilutė išskleista */
+.date-separator-row.expanded .toggle-arrow {
+    transform: rotate(90deg);
+}
+
+/* Pagal nutylėjimą paslepiame transakcijų eilutes */
+.transaction-row.hidden {
+    display: none;
+}
 
