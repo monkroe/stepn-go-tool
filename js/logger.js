@@ -1,9 +1,8 @@
-// Failas: js/logger.js (Versija su Repair ir Restore kategorijomis)
+// Failas: js/logger.js (Versija su patikslinta Restore funkcija)
 
 (function() {
     'use strict';
     
-    // === PAKEITIMAS PRASIDEDA ČIA: Pridėtos naujos kategorijos ===
     const CATEGORIES = {
         go: {
             income: { "GGT Earnings": "GGT Uždarbis", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
@@ -21,7 +20,6 @@
             }
         }
     };
-    // === PAKEITIMAS BAIGIASI ČIA ===
 
     const loggerElements = {};
     let currentLogData = []; 
@@ -39,7 +37,18 @@
     }
 
     function cacheLoggerElements() {
-        const ids = [ 'logForm', 'platform', 'logDate', 'logType', 'logCategory', 'logDescription', 'logSubmitBtn', 'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields', 'logTokenRadioGroup', 'logTokenAmount', 'goLevelUpGgt', 'goLevelUpGmt', 'ogLevelUpGst', 'ogLevelUpGmt', 'ogMintGst', 'ogMintGmt', 'ogMintScrolls', 'editRateUsd', 'editAmountUsd', 'logTableBody', 'summaryContainer', 'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn', 'exportCsvBtn' ];
+        const ids = [ 
+            'logForm', 'platform', 'logDate', 'logType', 'logCategory', 'logDescription', 'logSubmitBtn', 
+            'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'ogRestoreFields', 'editFields', 
+            'logTokenRadioGroup', 'logTokenAmount', 
+            'goLevelUpGgt', 'goLevelUpGmt', 
+            'ogLevelUpGst', 'ogLevelUpGmt', 
+            'ogMintGst', 'ogMintGmt', 'ogMintScrolls',
+            'ogRestoreGst', 'ogRestoreGmt', 'ogRestoreGemsGmt', // Pridėtas naujas ID
+            'editRateUsd', 'editAmountUsd', 
+            'logTableBody', 'summaryContainer', 
+            'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn', 'exportCsvBtn' 
+        ];
         ids.forEach(id => { if(document.getElementById(id)) loggerElements[id] = document.getElementById(id); });
     }
 
@@ -81,6 +90,7 @@
         if (!platform || !type || !category) throw new Error("Prašome pasirinkti platformą, tipą ir kategoriją.");
         const commonData = { date, type, category, description, platform };
         let operations = [];
+
         if (platform === 'go' && category === 'Level-up') {
             const ggt = parseFloat(loggerElements.goLevelUpGgt.value) || 0;
             const gmt = parseFloat(loggerElements.goLevelUpGmt.value) || 0;
@@ -99,13 +109,22 @@
             if (scrolls > 0) mintDesc += ` (Panaudota ${scrolls} Minting Scrolls)`;
             if (gst > 0) operations.push({ ...commonData, description: mintDesc, tokenKey: 'gst', tokenAmount: gst });
             if (gmt > 0) operations.push({ ...commonData, description: mintDesc, tokenKey: 'gmt', tokenAmount: gmt });
-        } else {
+        } else if (platform === 'og' && category === 'Restore') {
+            const gst = parseFloat(loggerElements.ogRestoreGst.value) || 0;
+            const gmtDirect = parseFloat(loggerElements.ogRestoreGmt.value) || 0;
+            const gmtGems = parseFloat(loggerElements.ogRestoreGemsGmt.value) || 0;
+            const totalGmt = gmtDirect + gmtGems; // Susumuojame GMT išlaidas
+            if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
+            if (totalGmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: totalGmt });
+        }
+        else {
             const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
             if (!selectedTokenRadio) throw new Error("Prašome pasirinkti žetoną.");
             const tokenAmount = parseFloat(loggerElements.logTokenAmount.value);
             if (isNaN(tokenAmount) || tokenAmount <= 0) throw new Error("Prašome įvesti teigiamą sumą.");
             operations.push({ ...commonData, tokenKey: selectedTokenRadio.value, tokenAmount });
         }
+
         if (operations.length === 0) throw new Error("Neįvesta jokia suma.");
         for (const op of operations) {
             await createSingleLogEntry(op);
@@ -246,14 +265,15 @@
         loggerElements.logCategory.disabled = Object.keys(platformCategories).length === 0;
     }
 
-    // === PAKEITIMAS PRASIDEDA ČIA: Pridėta logika naujoms kategorijoms ===
     function updateVisibleFields() {
         if (!loggerElements.platform || !loggerElements.logCategory) return;
         const platform = loggerElements.platform.value;
         const category = loggerElements.logCategory.value;
-        ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields'].forEach(id => { if (loggerElements[id]) loggerElements[id].classList.add('hidden'); });
-        const isEditing = !!loggerElements.logForm.dataset.editingId;
+        ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'ogRestoreFields', 'editFields'].forEach(id => { 
+            if (loggerElements[id]) loggerElements[id].classList.add('hidden'); 
+        });
 
+        const isEditing = !!loggerElements.logForm.dataset.editingId;
         if (isEditing) {
             loggerElements.standardFields.classList.remove('hidden');
             loggerElements.editFields.classList.remove('hidden');
@@ -271,16 +291,14 @@
             loggerElements.ogMintFields.classList.remove('hidden');
         } else if (platform === 'og' && category === 'Repair') {
             loggerElements.standardFields.classList.remove('hidden');
-            updateTokenRadioButtons(['gst']); // Repair visada mokama GST
+            updateTokenRadioButtons(['gst']);
         } else if (platform === 'og' && category === 'Restore') {
-            loggerElements.standardFields.classList.remove('hidden');
-            updateTokenRadioButtons(['gmt']); // Restore visada mokama GMT
+            loggerElements.ogRestoreFields.classList.remove('hidden');
         } else if (category) {
             loggerElements.standardFields.classList.remove('hidden');
             updateTokenRadioButtons(platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc']);
         }
     }
-    // === PAKEITIMAS BAIGIASI ČIA ===
 
     function updateTokenRadioButtons(tokensToShow) {
         if (!loggerElements.logTokenRadioGroup) return;
