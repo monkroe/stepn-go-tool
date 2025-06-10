@@ -1,4 +1,4 @@
-/* Failas: style.css (PATAISYTA IR VEIKIANTI VERSIJA) */
+/* Failas: style.css (Pilna ir atnaujinta versija) */
 
 body {
     font-family: 'Inter', sans-serif;
@@ -104,14 +104,16 @@ button.primary-btn:disabled {
     cursor: not-allowed;
 }
 
-/* === LENTELĖS STILIŲ PATAISYMAI PRASIDEDA ČIA === */
+/* --- Transakcijų lentelės stiliai --- */
+.overflow-x-auto {
+    overflow-x: auto;
+}
 
 table {
     width: 100%;
-    border-collapse: collapse;
-    /* Nustatome minimalų plotį, kad lentelė nebūtų per daug suspausta.
-       Kai ekranas bus siauresnis, atsiras horizontali slinkties juosta. */
     min-width: 650px;
+    margin-top: 1rem;
+    border-collapse: collapse;
 }
 
 th, td {
@@ -125,7 +127,6 @@ th, td {
 th {
     background-color: #1f2937;
     font-weight: 600;
-    /* Uždraudžiame antraščių teksto perkėlimą */
     white-space: nowrap;
 }
 
@@ -133,31 +134,20 @@ tr:last-child td {
     border-bottom: none;
 }
 
-/* PAGRINDINIS PATAISYMAS: Stulpelių teksto valdymas */
-
-/* Nurodome, kuriuose stulpeliuose tekstas NETURI būti perkeliamas.
-   Naudojame :nth-child() selektorių stulpeliams pagal jų eilės numerį. */
-td:nth-child(1), /* Data */
-td:nth-child(3), /* Žetonas */
-td:nth-child(4), /* Suma (žetonais) */
-td:nth-child(5), /* Kursas */
-td:nth-child(6), /* Suma (USD) */
-td:nth-child(8)  /* Veiksmai */ {
-    white-space: nowrap; /* Uždraudžia teksto perkėlimą į kitą eilutę */
+td:nth-child(1), td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6), td:nth-child(8) {
+    white-space: nowrap;
 }
 
-/* Stulpelis "Tipas" (su rodykle) */
+td:nth-child(7) {
+    word-break: break-word;
+    white-space: normal;
+    min-width: 150px;
+}
+
 td:nth-child(2) {
     text-align: center;
     font-size: 1.25rem;
-    width: 50px; /* Suteikiame fiksuotą plotį, kad būtų stabilus */
-}
-
-/* Stulpelis "Aprašymas", kuriame tekstas GALI būti perkeliamas */
-td:nth-child(7) {
-    word-break: break-word; /* Leidžia laužyti ilgus žodžius, jei reikia */
-    white-space: normal;    /* Leidžia normalų teksto perkėlimą */
-    min-width: 150px;       /* Užtikrina, kad stulpelis nebus per siauras */
+    width: 50px;
 }
 
 .log-table-actions button {
@@ -170,16 +160,36 @@ td:nth-child(7) {
     margin-bottom: 0.25rem;
 }
 
-/* === LENTELĖS STILIŲ PATAISYMAI BAIGIASI ČIA === */
-
-
 .btn-edit { background-color: #3b82f6; color: white; }
 .btn-delete { background-color: #ef4444; color: white; }
 .hidden { display: none; }
+
+/* --- Ikonų stiliai --- */
+.token-icon-table {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    border-radius: 50%;
+}
+
+.converter-card .token-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.radio-label .token-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* --- Radijo mygtukų stiliai --- */
 .radio-group { border: 1px solid #4b5563; border-radius: 0.375rem; overflow: hidden; }
 .radio-label { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem; background-color: #374151; border-bottom: 1px solid #4b5563; cursor: pointer; }
 .radio-label span:first-child { display: flex; align-items: center; gap: 0.75rem; }
-.radio-label .token-icon { width: 24px; height: 24px; }
 .radio-label:last-child { border-bottom: none; }
 .radio-label input[type="radio"] { opacity: 0; width: 0; height: 0; position: absolute; }
 .radio-custom-dot { width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 2px solid #6b7280; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s; }
@@ -187,6 +197,8 @@ td:nth-child(7) {
 .radio-label input[type="radio"]:checked + .radio-custom-dot { border-color: #4f46e5; }
 .radio-label input[type="radio"]:checked + .radio-custom-dot::after { transform: scale(1); }
 .radio-label:hover .radio-custom-dot { border-color: #9ca3af; }
+
+/* --- Suvestinės ir konverterio stiliai --- */
 .summary-section { margin-top: 1.5rem; padding: 1rem; background-color: #111827; border-radius: 0.5rem; }
 .summary-row { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.875rem; align-items: center; }
 .summary-label { color: #9ca3af; }
@@ -198,6 +210,7 @@ td:nth-child(7) {
 @media (min-width: 640px) { .converter-grid { grid-template-columns: repeat(2, 1fr); } }
 .converter-card { background-color: #374151; padding: 1rem; border-radius: 0.5rem; }
 .converter-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+.converter-card-title { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1.25rem; }
 .converter-card-update-btn { font-size: 0.75rem; padding: 0.25rem 0.5rem; background-color: #4f46e5; color: white; border-radius: 0.25rem; }
 .converter-card-price-wrapper { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.5rem; }
 .converter-card-price { font-size: 1.25rem; font-weight: 700; }
@@ -206,60 +219,43 @@ td:nth-child(7) {
 .price-down { color: #f87171; }
 .converter-card .update-time { font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; }
 .filter-section { background-color: #111827; padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; align-items: end; }
-/* ================================================ */
-/* KONVERTERIO IKONŲ PATAISYMAS          */
-/* ================================================ */
 
-/* Ši taisyklė nustato konverterio kortelėje esančios ikonos dydį ir padaro ją apvalią. */
-.converter-card .token-logo {
-    width: 32px;      /* Ikonos plotis */
-    height: 32px;     /* Ikonos aukštis */
-    border-radius: 50%; /* Užapvalina kampus, paversdama kvadratą apskritimu */
-}
-
-/* Papildoma taisyklė, užtikrinanti, kad ikona ir pavadinimas būtų gražiai sulygiuoti. */
-.converter-card-title {
-    display: flex;
-    align-items: center;
-    gap: 12px; /* Tarpas tarp ikonos ir kriptovaliutos pavadinimo */
-    font-weight: 600;
-    font-size: 1.25rem;
-}
-/* ================================================ */
-/* Stilius ikonoms transakcijų lentelėje        */
-/* ================================================ */
-
-.token-icon-table {
-    width: 24px;
-    height: 24px;
-    /* Sulygiuoja ikoną eilutės viduryje pagal aukštį */
-    vertical-align: middle; 
-    border-radius: 50%;
-}
-/* ================================================ */
-/* PATAISYMAS: Įrašų formos ikonų dydis       */
-/* ================================================ */
-
-.radio-label .token-logo {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%; /* Išlaiko ikonas apvalias */
-    object-fit: cover;  /* Gražiai pritaiko paveikslėlį rėmelyje */
-    flex-shrink: 0;     /* Svarbu, kad ikona nesusispaustų šalia teksto */
-}
-/* ================================================ */
-/* Stilius datos skirtukams transakcijų lentelėje */
-/* ================================================ */
+/* === PASKUTINIAI PAKEITIMAI: DATOS SKIRTUKŲ STILIAI === */
 
 .date-separator-row td {
-    background-color: #2d3748; /* Šiek tiek šviesesnis fonas nei lentelės */
+    background-color: #2d3748;
+    padding: 0.5rem 1rem;
+    border-top: 2px solid #4a5568;
+    border-bottom: 1px solid #4a5568;
+}
+
+.date-separator-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.date-display {
     color: #a0aec0;
     font-weight: bold;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    text-align: center;
     font-size: 0.8rem;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+}
+
+.daily-summary {
+    display: flex;
+    gap: 1rem;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.daily-income {
+    color: #34d399; /* income-color */
+}
+
+.daily-expense {
+    color: #f87171; /* expense-color */
 }
 
