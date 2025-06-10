@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STEPN GO Įrankis</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -30,6 +33,7 @@
                             <option value="og">STEPN OG</option>
                         </select>
                     </div>
+
                     <div class="grid-2-cols">
                         <div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div>
                         <div class="input-group"><label for="logType">Tipas</label>
@@ -41,12 +45,14 @@
                         </div>
                     </div>
                     <div class="input-group"><label for="logCategory">Kategorija</label><select id="logCategory" required><option value="" disabled selected>Pasirinkite kategoriją...</option></select></div>
+                    
                     <div id="standardFields" class="hidden"><div class="grid-2-cols"><div class="input-group"><label>Žetonas</label><div id="logTokenRadioGroup" class="radio-group"></div></div><div class="input-group"><label for="logTokenAmount">Suma (žetonais)</label><input type="number" id="logTokenAmount" step="any" placeholder="Kiekis"></div></div></div>
+                    
                     <div id="goLevelUpFields" class="hidden grid-2-cols">
                         <div class="input-group"><label for="goLevelUpGgt">GGT Suma</label><input type="number" id="goLevelUpGgt" step="any" placeholder="GGT kiekis"></div>
                         <div class="input-group"><label for="goLevelUpGmt">GMT Suma</label><input type="number" id="goLevelUpGmt" step="any" placeholder="GMT kiekis"></div>
                     </div>
-                    <div id="ogLevelUpFields" class="hidden grid-2-cols">
+                     <div id="ogLevelUpFields" class="hidden grid-2-cols">
                         <div class="input-group"><label for="ogLevelUpGst">GST Suma</label><input type="number" id="ogLevelUpGst" step="any" placeholder="GST kiekis"></div>
                         <div class="input-group"><label for="ogLevelUpGmt">GMT Suma</label><input type="number" id="ogLevelUpGmt" step="any" placeholder="GMT kiekis"></div>
                     </div>
@@ -57,23 +63,18 @@
                         </div>
                         <div class="input-group"><label for="ogMintScrolls">Minting Scrolls Kiekis</label><input type="number" id="ogMintScrolls" step="1" placeholder="pvz., 2"></div>
                     </div>
-                    <div id="ogRestoreFields" class="hidden">
-                        <div class="grid-2-cols">
-                            <div class="input-group"><label for="ogRestoreGst">GST Suma</label><input type="number" id="ogRestoreGst" step="any" placeholder="GST kiekis"></div>
-                            <div class="input-group"><label for="ogRestoreGmt">GMT Suma (papildomai)</label><input type="number" id="ogRestoreGmt" step="any" placeholder="GMT kiekis"></div>
-                        </div>
-                        <div class="input-group"><label for="ogRestoreGemsGmt">Brangakmenių vertė (GMT)</label><input type="number" id="ogRestoreGemsGmt" step="any" placeholder="Bendra gem'ų vertė GMT"></div>
-                        <p class="text-xs text-gray-400 -mt-2 mb-4">Panaudotų brangakmenių kiekį ir tipą galite nurodyti aprašyme.</p>
-                    </div>
+                    
                     <div id="editFields" class="hidden grid-2-cols">
                         <div class="input-group"><label for="editRateUsd">Kursas (USD)</label><input type="number" id="editRateUsd" step="any"></div>
                         <div class="input-group"><label for="editAmountUsd">Suma (USD)</label><input type="number" id="editAmountUsd" step="any"></div>
                     </div>
+                    
                     <div class="input-group mt-4"><label for="logDescription">Aprašymas (nebūtina)</label><input type="text" id="logDescription" placeholder="pvz., Parduotas 'Jogger'"></div>
                     <button id="logSubmitBtn" type="submit" class="primary-btn w-full">Pridėti įrašą</button>
                 </form>
                 <hr class="my-8 border-gray-700">
                 <h2 class="text-xl font-semibold mb-4">Transakcijų valdymas</h2>
+                
                 <div class="filter-section">
                     <div class="input-group"><label for="filterStartDate">Nuo</label><input type="date" id="filterStartDate"></div>
                     <div class="input-group"><label for="filterEndDate">Iki</label><input type="date" id="filterEndDate"></div>
@@ -82,10 +83,12 @@
                     <div class="input-group"><label for="filterOrder">Tvarka</label><select id="filterOrder"><option value="desc">Mažėjančia</option><option value="asc">Didėjančia</option></select></div>
                     <button id="filterBtn" class="primary-btn">Filtruoti</button>
                 </div>
+                
                 <div class="flex justify-between items-center my-4">
                     <h2 class="text-xl font-semibold">Transakcijų sąrašas</h2>
                     <button id="exportCsvBtn" class="primary-btn text-sm py-2 px-4">Eksportuoti</button>
                 </div>
+
                 <div class="overflow-x-auto">
                     <table class="min-w-full">
                         <thead>
@@ -111,8 +114,7 @@
         </main>
     </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="https://cdn.tailwindcss.com/3.4.3"></script>
+<script src="js/supabase.js" defer></script>
 <script src="js/auth.js" defer></script>
 <script src="js/logger.js" defer></script>
 <script src="js/converter.js" defer></script>
