@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Pataisyta versija su ikonomis lentelėje)
+// Failas: js/logger.js (Versija su transakcijų grupavimu pagal datą)
 
 (function() {
     'use strict';
@@ -266,10 +266,21 @@
         populateFilterDropdowns(data);
     }
     
+    function populateFilterDropdowns(data) {
+        if (!loggerElements.filterToken) return;
+        const uniqueTokens = [...new Set(data.map(item => item.token))];
+        let optionsHTML = '<option value="">Visi</option>';
+        uniqueTokens.sort().forEach(token => { optionsHTML += `<option value="${token}">${window.appData.tokens[token]?.symbol || token.toUpperCase()}</option>`; });
+        const currentValue = loggerElements.filterToken.value;
+        loggerElements.filterToken.innerHTML = optionsHTML;
+        loggerElements.filterToken.value = currentValue;
+    }
+
     // === PAKEITIMAS PRASIDEDA ČIA: ATNAUJINTA LENTELĖS GENERAVIMO FUNKCIJA ===
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Kraunama...</td></tr>';
+        
         if (!data || data.length === 0) {
             loggerElements.logTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4">Įrašų nerasta.</td></tr>`;
             renderSummary(0, 0, {});
@@ -278,8 +289,23 @@
         
         let totalIncomeUSD = 0, totalExpenseUSD = 0; 
         const tokenBalances = {};
+        let lastDate = null; // Kintamasis paskutinei datai sekti
 
-        const rowsHTML = data.map(entry => {
+        const rowsHTML = data.reduce((html, entry) => {
+            // Tikriname, ar data pasikeitė
+            if (entry.date !== lastDate) {
+                lastDate = entry.date;
+                // Jei data nauja, pridedame datos skirtuko eilutę
+                // Pakeista į geriau skaitomą datos formatą
+                const displayDate = new Date(entry.date + 'T00:00:00'); // Pridedame laiką, kad išvengtume laiko juostų problemų
+                html += `
+                    <tr class="date-separator-row">
+                        <td colspan="8">${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                    </tr>
+                `;
+            }
+
+            // Toliau generuojame įprastą įrašo eilutę
             const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
             const isIncome = entry.type === 'income';
             
@@ -288,18 +314,12 @@
             if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
             tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
             
-            // Paruošiame HTML kodą žetono stulpeliui
-            const tokenKey = entry.token; // pvz., "gst"
-            const tokenSymbol = (window.appData.tokens[tokenKey]?.symbol || tokenKey.toUpperCase()).replace(' (SOL)', ''); // pvz., "GST"
-            const iconPath = `img/${tokenKey.toLowerCase()}.svg`;
-            
-            // Sukuriame <img> žymą su atsarginiu variantu (onerror)
-            // Jei ikona neįsikels, vietoje jos bus parodytas simbolis (pvz., "GST")
+            const tokenSymbol = (window.appData.tokens[entry.token]?.symbol || entry.token.toUpperCase()).replace(' (SOL)', '');
+            const iconPath = `img/${entry.token.toLowerCase()}.svg`;
             const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
-
             const arrow = isIncome ? '▲' : '▼';
 
-            return `
+            html += `
                 <tr data-id="${entry.id}">
                     <td class="align-middle">${entry.date}</td>
                     <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
@@ -314,7 +334,8 @@
                     </td>
                 </tr>
             `;
-        }).join('');
+            return html;
+        }, '');
         
         loggerElements.logTableBody.innerHTML = rowsHTML;
         renderSummary(totalIncomeUSD, totalExpenseUSD, tokenBalances);
