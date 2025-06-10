@@ -1,4 +1,4 @@
-/* Failas: style.css (Pilna versija su pataisytu mygtukų pločiu) */
+/* Failas: style.css (Stabili, pilna versija) */
 
 body {
     font-family: 'Inter', sans-serif;
@@ -84,28 +84,25 @@ input:disabled {
     gap: 1rem;
 }
 
-/* === PAKEITIMAS ČIA === */
-button.primary-btn {
-    /* Pašalinta 'width: 100%;' taisyklė, kad mygtukai nebūtų platūs pagal nutylėjimą */
-    padding: 0.75rem;
-    background-color: #4f46e5;
-    color: white;
-    font-weight: 600;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
+button.primary-btn { 
+    padding: 0.75rem; 
+    background-color: #4f46e5; 
+    color: white; 
+    font-weight: 600; 
+    border-radius: 0.375rem; 
+    cursor: pointer; 
+    transition: background-color 0.2s; 
 }
 
-button.primary-btn:hover {
-    background-color: #4338ca;
+button.primary-btn:hover { 
+    background-color: #4338ca; 
 }
 
-button.primary-btn:disabled {
-    background-color: #374151;
-    cursor: not-allowed;
+button.primary-btn:disabled { 
+    background-color: #374151; 
+    cursor: not-allowed; 
 }
 
-/* --- Transakcijų lentelės stiliai --- */
 .overflow-x-auto {
     overflow-x: auto;
 }
@@ -165,7 +162,6 @@ td:nth-child(2) {
 .btn-delete { background-color: #ef4444; color: white; }
 .hidden { display: none; }
 
-/* --- Ikonų stiliai --- */
 .token-icon-table {
     width: 24px;
     height: 24px;
@@ -187,7 +183,6 @@ td:nth-child(2) {
     flex-shrink: 0;
 }
 
-/* --- Radijo mygtukų stiliai --- */
 .radio-group { border: 1px solid #4b5563; border-radius: 0.375rem; overflow: hidden; }
 .radio-label { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem; background-color: #374151; border-bottom: 1px solid #4b5563; cursor: pointer; }
 .radio-label span:first-child { display: flex; align-items: center; gap: 0.75rem; }
@@ -199,7 +194,6 @@ td:nth-child(2) {
 .radio-label input[type="radio"]:checked + .radio-custom-dot::after { transform: scale(1); }
 .radio-label:hover .radio-custom-dot { border-color: #9ca3af; }
 
-/* --- Suvestinės ir konverterio stiliai --- */
 .summary-section { margin-top: 1.5rem; padding: 1rem; background-color: #111827; border-radius: 0.5rem; }
 .summary-row { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.875rem; align-items: center; }
 .summary-label { color: #9ca3af; }
@@ -207,6 +201,7 @@ td:nth-child(2) {
 .income-color { color: #34d399; }
 .expense-color { color: #f87171; }
 .btc-value { font-size: 0.75rem; color: #9ca3af; display: flex; align-items: center; gap: 0.25rem; }
+
 .converter-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 @media (min-width: 640px) { .converter-grid { grid-template-columns: repeat(2, 1fr); } }
 .converter-card { background-color: #374151; padding: 1rem; border-radius: 0.5rem; }
@@ -221,7 +216,6 @@ td:nth-child(2) {
 .converter-card .update-time { font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; }
 .filter-section { background-color: #111827; padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; align-items: end; }
 
-/* --- Datos skirtukų stiliai --- */
 .date-separator-row td {
     background-color: #2d3748;
     padding: 0.5rem 1rem;
@@ -269,19 +263,16 @@ td:nth-child(2) {
     border: 1px solid currentColor;
     font-size: 0.85rem;
 }
-/* === Akordeono stiliai === */
 
-/* Padaro datos eilutę paspaudžiamą */
 .date-separator-row {
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
 .date-separator-row:hover {
-    background-color: #374151; /* Šiek tiek pašviesėja užvedus pelę */
+    background-color: #374151;
 }
 
-/* Rodyklės ikona */
 .toggle-arrow {
     display: inline-block;
     margin-right: 0.75rem;
@@ -289,12 +280,10 @@ td:nth-child(2) {
     transition: transform 0.2s ease-in-out;
 }
 
-/* Pasukame rodyklę, kai eilutė išskleista */
 .date-separator-row.expanded .toggle-arrow {
     transform: rotate(90deg);
 }
 
-/* Pagal nutylėjimą paslepiame transakcijų eilutes */
 .transaction-row.hidden {
     display: none;
 }
