@@ -1,18 +1,55 @@
-// Failas: js/logger.js (Versija su dinamišku kategorijų filtru)
+// Failas: js/logger.js (Versija su kategorijų rikiavimu pagal svarbą)
 
 (function() {
     'use strict';
     
+    // === PAKEITIMAS PRASIDEDA ČIA: Pakeista kategorijų eilės tvarka ===
     const CATEGORIES = {
         go: {
-            income: { "GGT Earnings": "GGT uždarbis", "Sneaker Rental": "Sportbačių nuoma", "Sneaker Sale": "Sportbačių pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas", "Other": "Kita" },
-            expense: { "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Sneaker Purchase": "Sportbačių pirkimas", "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", "Gem Purchase": "Brangakmenių pirkimas", "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas", "Mystery Box Slot Purchase": "Papildomų 'Mystery Box' vietų pirkimas", "Other": "Kita" }
+            income: { 
+                "GGT Earnings": "GGT uždarbis", 
+                "Sneaker Rental": "Sportbačių nuoma",
+                "Sneaker Sale": "Sportbačių pardavimas",
+                "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas",
+                "Gem Sale": "Brangakmenių pardavimas",
+                "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas",
+                "Other": "Kita" 
+            },
+            expense: { 
+                "Level-up": "Lygio kėlimas", 
+                "Minting": "Mintinimas", 
+                "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", 
+                "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas",
+                "Sneaker Purchase": "Sportbačių pirkimas",
+                "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas",
+                "Gem Purchase": "Brangakmenių pirkimas",
+                "Mystery Box Slot Purchase": "Papildomų 'Mystery Box' vietų pirkimas",
+                "Other": "Kita" 
+            }
         },
         og: {
-            income: { "GST Earnings": "GST uždarbis", "Sneaker Sale": "Sportbačio pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Scroll Sale": "'Minting Scroll' pardavimas", "Other": "Kita" },
-            expense: { "Level-up": "Lygio kėlimas", "Repair": "Taisymas (HP)", "Restore": "Atributų atkūrimas", "Minting": "Mintinimas", "Sneaker Purchase": "Sportbačių pirkimas", "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", "Mystery Box opening": "Dėžutės atidarymas", "Scroll Purchase": "'Minting Scroll' pirkimas", "Other": "Kita" }
+            income: { 
+                "GST Earnings": "GST uždarbis", 
+                "Sneaker Sale": "Sportbačio pardavimas", 
+                "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas",
+                "Gem Sale": "Brangakmenių pardavimas",
+                "Scroll Sale": "'Minting Scroll' pardavimas",
+                "Other": "Kita" 
+            },
+            expense: { 
+                "Repair": "Taisymas (HP)",
+                "Level-up": "Lygio kėlimas", 
+                "Mystery Box opening": "Dėžutės atidarymas", 
+                "Restore": "Atributų atkūrimas",
+                "Minting": "Mintinimas", 
+                "Sneaker Purchase": "Sportbačių pirkimas",
+                "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas",
+                "Scroll Purchase": "'Minting Scroll' pirkimas",
+                "Other": "Kita" 
+            }
         }
     };
+    // === PAKEITIMAS BAIGIASI ČIA ===
 
     const loggerElements = {};
     let currentLogData = []; 
@@ -24,7 +61,7 @@
 
     function initLogger() {
         cacheLoggerElements();
-        updateCategoryFilter(); // Pakeista iš populateCategoryFilter
+        updateCategoryFilter();
         resetLogForm();
         bindLoggerEventListeners();
         loadAndRenderLogTable();
@@ -60,7 +97,7 @@
         if (loggerElements.platform) {
             loggerElements.platform.addEventListener('change', () => {
                 updateDynamicForm();
-                updateCategoryFilter(); // Atnaujiname filtrą pasikeitus platformai
+                updateCategoryFilter();
             });
         }
         if (loggerElements.logType) loggerElements.logType.addEventListener('change', updateDynamicForm);
@@ -69,31 +106,51 @@
         if (loggerElements.editAmountUsd) loggerElements.editAmountUsd.addEventListener('input', () => syncEditInputs('amount'));
     }
 
-    // === PAKEISTA FUNKCIJA ===
     function updateCategoryFilter() {
         if (!loggerElements.filterCategory) return;
 
         const platform = loggerElements.platform.value;
         const allCategories = new Set();
         const reverseCategoryMap = {};
+        
+        let categoryOrder = [];
 
         const processPlatform = (plat) => {
-            Object.values(CATEGORIES[plat].income).forEach(val => allCategories.add(val));
-            Object.values(CATEGORIES[plat].expense).forEach(val => allCategories.add(val));
-            Object.entries(CATEGORIES[plat].income).forEach(([key, value]) => { if (!reverseCategoryMap[value]) reverseCategoryMap[value] = key; });
-            Object.entries(CATEGORIES[plat].expense).forEach(([key, value]) => { if (!reverseCategoryMap[value]) reverseCategoryMap[value] = key; });
+            const incomeKeys = Object.keys(CATEGORIES[plat].income);
+            const expenseKeys = Object.keys(CATEGORIES[plat].expense);
+            
+            incomeKeys.forEach(key => {
+                const value = CATEGORIES[plat].income[key];
+                allCategories.add(value);
+                if (!reverseCategoryMap[value]) reverseCategoryMap[value] = key;
+            });
+            expenseKeys.forEach(key => {
+                const value = CATEGORIES[plat].expense[key];
+                allCategories.add(value);
+                if (!reverseCategoryMap[value]) reverseCategoryMap[value] = key;
+            });
+            
+            categoryOrder.push(...incomeKeys.map(k => CATEGORIES[plat].income[k]));
+            categoryOrder.push(...expenseKeys.map(k => CATEGORIES[plat].expense[k]));
         };
 
-        if (platform) { // Jei platforma pasirinkta
+        if (platform) {
             processPlatform(platform);
             loggerElements.filterCategory.disabled = false;
-        } else { // Jei platforma nepasirinkta, rodome visas kategorijas
+        } else {
             processPlatform('go');
             processPlatform('og');
-            loggerElements.filterCategory.disabled = true; // Filtras neaktyvus
+            loggerElements.filterCategory.disabled = true;
         }
         
-        const sortedCategories = [...allCategories].sort((a, b) => a.localeCompare(b));
+        const sortedCategories = [...allCategories].sort((a, b) => {
+            const indexA = categoryOrder.indexOf(a);
+            const indexB = categoryOrder.indexOf(b);
+            if(indexA === -1) return 1;
+            if(indexB === -1) return -1;
+            return indexA - indexB;
+        });
+
         let optionsHTML = `<option value="">Visos</option>`;
         
         sortedCategories.forEach(cat => {
@@ -302,10 +359,16 @@
         const platform = loggerElements.platform.value;
         const type = loggerElements.logType.value;
         const platformCategories = CATEGORIES[platform]?.[type] || {};
-        const currentCategory = loggerElements.logCategory.value;
+        
+        // Pakeista: rikiuojame ne pagal abėcėlę, o pagal objekto eiliškumą
+        const options = Object.entries(platformCategories);
+
         let optionsHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
-        optionsHTML += Object.entries(platformCategories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
+        optionsHTML += options.map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
+        
+        const currentCategory = loggerElements.logCategory.value;
         loggerElements.logCategory.innerHTML = optionsHTML;
+        
         if (platformCategories[currentCategory]) {
             loggerElements.logCategory.value = currentCategory;
         } else {
