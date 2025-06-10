@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STEPN GO Įrankis</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -63,6 +61,15 @@
                         </div>
                         <div class="input-group"><label for="ogMintScrolls">Minting Scrolls Kiekis</label><input type="number" id="ogMintScrolls" step="1" placeholder="pvz., 2"></div>
                     </div>
+
+                    <div id="ogRestoreFields" class="hidden">
+                        <div class="grid-2-cols">
+                            <div class="input-group"><label for="ogRestoreGst">GST Suma</label><input type="number" id="ogRestoreGst" step="any" placeholder="GST kiekis"></div>
+                            <div class="input-group"><label for="ogRestoreGmt">GMT Suma (papildomai)</label><input type="number" id="ogRestoreGmt" step="any" placeholder="GMT kiekis"></div>
+                        </div>
+                        <div class="input-group"><label for="ogRestoreGemsGmt">Brangakmenių vertė (GMT)</label><input type="number" id="ogRestoreGemsGmt" step="any" placeholder="Bendra gem'ų vertė GMT"></div>
+                        <p class="text-xs text-gray-400 -mt-2 mb-4">Panaudotų brangakmenių kiekį ir tipą galite nurodyti aprašyme.</p>
+                    </div>
                     
                     <div id="editFields" class="hidden grid-2-cols">
                         <div class="input-group"><label for="editRateUsd">Kursas (USD)</label><input type="number" id="editRateUsd" step="any"></div>
@@ -114,7 +121,7 @@
         </main>
     </div>
 
-<script src="js/supabase.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/auth.js" defer></script>
 <script src="js/logger.js" defer></script>
 <script src="js/converter.js" defer></script>
