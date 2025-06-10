@@ -27,7 +27,6 @@
                 <form id="logForm">
                     <div class="input-group">
                         <label for="platform">Platforma</label>
-                        <!-- PATAISYMAS ČIA -->
                         <select id="platform" required>
                             <option value="" disabled selected>Pasirinkite platformą...</option>
                             <option value="go">STEPN GO</option>
@@ -75,6 +74,7 @@
                 </form>
                 <hr class="my-8 border-gray-700">
                 <h2 class="text-xl font-semibold mb-4">Transakcijų valdymas</h2>
+                
                 <div class="filter-section">
                     <div class="input-group"><label for="filterStartDate">Nuo</label><input type="date" id="filterStartDate"></div>
                     <div class="input-group"><label for="filterEndDate">Iki</label><input type="date" id="filterEndDate"></div>
@@ -82,10 +82,13 @@
                     <div class="input-group"><label for="filterSort">Rikiuoti pagal</label><select id="filterSort"><option value="date">Data</option><option value="token_amount">Suma</option><option value="rate_usd">Kursas</option></select></div>
                     <div class="input-group"><label for="filterOrder">Tvarka</label><select id="filterOrder"><option value="desc">Mažėjančia</option><option value="asc">Didėjančia</option></select></div>
                     <button id="filterBtn" class="primary-btn h-10">Filtruoti</button>
+                    
+                    <button id="exportCsvBtn" class="primary-btn h-10">Eksportuoti į CSV</button>
                 </div>
+                
                 <h2 class="text-xl font-semibold my-4">Transakcijų sąrašas</h2>
                 <div class="overflow-x-auto">
-                    <table class="overflow-x-auto table-auto min-w-full">
+                    <table class="min-w-full">
                         <thead>
                             <tr>
                                 <th>Data</th>
@@ -108,17 +111,12 @@
             </div>
         </main>
     </div>
-<!-- TEISINGA TVARKA -->
 
-<!-- 1. Priklausomybės (Supabase biblioteka ir jos inicializavimas) -->
 <script src="js/supabase.js" defer></script>
 <script src="js/auth.js" defer></script>
-
-<!-- 2. Moduliai/Pagalbiniai failai (su duomenimis ir funkcijomis) -->
 <script src="js/logger.js" defer></script>
 <script src="js/converter.js" defer></script>
-
-<!-- 3. Pagrindinis scenarijus ("Dirigentas"), kuris viską naudoja -->
 <script src="js/script.js" defer></script> 
 </body>
 </html>
+
