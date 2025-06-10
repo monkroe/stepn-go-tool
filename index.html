@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STEPN GO Įrankis</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -88,9 +88,7 @@
                     <div class="input-group"><label for="filterStartDate">Nuo</label><input type="date" id="filterStartDate"></div>
                     <div class="input-group"><label for="filterEndDate">Iki</label><input type="date" id="filterEndDate"></div>
                     <div class="input-group"><label for="filterToken">Žetonas</label><select id="filterToken"><option value="">Visi</option></select></div>
-                    
                     <div class="input-group"><label for="filterCategory">Kategorija</label><select id="filterCategory"><option value="">Visos</option></select></div>
-
                     <div class="input-group"><label for="filterSort">Rikiuoti pagal</label><select id="filterSort"><option value="date">Data</option><option value="token_amount">Suma</option><option value="rate_usd">Kursas</option></select></div>
                     <div class="input-group"><label for="filterOrder">Tvarka</label><select id="filterOrder"><option value="desc">Mažėjančia</option><option value="asc">Didėjančia</option></select></div>
                     <button id="filterBtn" class="primary-btn">Filtruoti</button>
