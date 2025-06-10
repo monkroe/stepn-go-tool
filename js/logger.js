@@ -1,8 +1,9 @@
-// Failas: js/logger.js (Versija su transakcijų grupavimu pagal datą)
+// Failas: js/logger.js (Versija su dienos pajamų/išlaidų suvestine)
 
 (function() {
     'use strict';
     
+    // ... (visas kodas iki 'loadAndRenderLogTable' lieka nepakitęs) ...
     const CATEGORIES = {
         go: {
             income: { "GGT Earnings": "GGT Uždarbis", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
@@ -270,13 +271,50 @@
         if (!loggerElements.filterToken) return;
         const uniqueTokens = [...new Set(data.map(item => item.token))];
         let optionsHTML = '<option value="">Visi</option>';
-        uniqueTokens.sort().forEach(token => { optionsHTML += `<option value="${token}">${window.appData.tokens[token]?.symbol || token.toUpperCase()}</option>`; });
+        uniqueTokens.sort().forEach(token => { 
+            let displayToken = window.appData.tokens[token]?.symbol || token.toUpperCase();
+            if (displayToken === 'GST (SOL)') {
+                displayToken = 'GST';
+            }
+            optionsHTML += `<option value="${token}">${displayToken}</option>`; 
+        });
         const currentValue = loggerElements.filterToken.value;
         loggerElements.filterToken.innerHTML = optionsHTML;
         loggerElements.filterToken.value = currentValue;
     }
 
-    // === PAKEITIMAS PRASIDEDA ČIA: ATNAUJINTA LENTELĖS GENERAVIMO FUNKCIJA ===
+    // === PAKEITIMAS PRASIDEDA ČIA ===
+
+    /**
+     * Helper funkcija, kuri grupuoja transakcijas pagal datą ir apskaičiuoja dienos suvestines.
+     * @param {Array} transactions - Išrikiuotas transakcijų masyvas.
+     * @returns {Object} - Objektas, kur raktai yra datos, o reikšmės - objektai su transakcijomis ir suvestinėmis.
+     */
+    function groupTransactionsByDate(transactions) {
+        return transactions.reduce((acc, entry) => {
+            const date = entry.date;
+            if (!acc[date]) {
+                acc[date] = {
+                    transactions: [],
+                    dailyIncome: 0,
+                    dailyExpense: 0
+                };
+            }
+            const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
+            if (entry.type === 'income') {
+                acc[date].dailyIncome += amount_usd;
+            } else {
+                acc[date].dailyExpense += amount_usd;
+            }
+            acc[date].transactions.push(entry);
+            return acc;
+        }, {});
+    }
+
+    /**
+     * Pagrindinė funkcija, kuri generuoja transakcijų lentelę su dienos suvestinėmis.
+     * @param {Array} data - Neapdorotas transakcijų masyvas iš duomenų bazės.
+     */
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Kraunama...</td></tr>';
@@ -286,58 +324,68 @@
             renderSummary(0, 0, {});
             return;
         }
-        
-        let totalIncomeUSD = 0, totalExpenseUSD = 0; 
+
+        const groupedData = groupTransactionsByDate(data);
+        const dates = Object.keys(groupedData);
+
+        let totalIncomeUSD = 0, totalExpenseUSD = 0;
         const tokenBalances = {};
-        let lastDate = null; // Kintamasis paskutinei datai sekti
+        let finalHTML = '';
 
-        const rowsHTML = data.reduce((html, entry) => {
-            // Tikriname, ar data pasikeitė
-            if (entry.date !== lastDate) {
-                lastDate = entry.date;
-                // Jei data nauja, pridedame datos skirtuko eilutę
-                // Pakeista į geriau skaitomą datos formatą
-                const displayDate = new Date(entry.date + 'T00:00:00'); // Pridedame laiką, kad išvengtume laiko juostų problemų
-                html += `
-                    <tr class="date-separator-row">
-                        <td colspan="8">${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
-                    </tr>
-                `;
-            }
+        dates.forEach(date => {
+            const group = groupedData[date];
+            const displayDate = new Date(date + 'T00:00:00');
 
-            // Toliau generuojame įprastą įrašo eilutę
-            const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
-            const isIncome = entry.type === 'income';
-            
-            if (isIncome) totalIncomeUSD += amount_usd; else totalExpenseUSD += amount_usd;
-            
-            if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
-            tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
-            
-            const tokenSymbol = (window.appData.tokens[entry.token]?.symbol || entry.token.toUpperCase()).replace(' (SOL)', '');
-            const iconPath = `img/${entry.token.toLowerCase()}.svg`;
-            const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
-            const arrow = isIncome ? '▲' : '▼';
-
-            html += `
-                <tr data-id="${entry.id}">
-                    <td class="align-middle">${entry.date}</td>
-                    <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
-                    <td class="token-cell align-middle">${tokenCellHTML}</td>
-                    <td class="align-middle">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
-                    <td class="align-middle">$${(entry.rate_usd || 0).toFixed(5)}</td>
-                    <td class="align-middle">$${amount_usd.toFixed(2)}</td>
-                    <td class="align-middle">${entry.description || ''}</td>
-                    <td class="log-table-actions align-middle">
-                        <button class="btn-edit">Taisyti</button>
-                        <button class="btn-delete">Trinti</button>
+            // 1. Sukuriame datos eilutę su suvestine
+            finalHTML += `
+                <tr class="date-separator-row">
+                    <td colspan="8">
+                        <div class="date-separator-content">
+                            <span class="date-display">${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            <span class="daily-summary">
+                                <span class="daily-income">+${group.dailyIncome.toFixed(2)}</span>
+                                <span class="daily-expense">-${group.dailyExpense.toFixed(2)}</span>
+                            </span>
+                        </div>
                     </td>
                 </tr>
             `;
-            return html;
-        }, '');
+
+            // 2. Pridedame tos dienos transakcijas
+            group.transactions.forEach(entry => {
+                const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
+                const isIncome = entry.type === 'income';
+
+                totalIncomeUSD += isIncome ? amount_usd : 0;
+                totalExpenseUSD += !isIncome ? amount_usd : 0;
+                
+                if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
+                tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
+
+                const tokenSymbol = (window.appData.tokens[entry.token]?.symbol || entry.token.toUpperCase()).replace(' (SOL)', '');
+                const iconPath = `img/${entry.token.toLowerCase()}.svg`;
+                const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
+                const arrow = isIncome ? '▲' : '▼';
+
+                finalHTML += `
+                    <tr data-id="${entry.id}">
+                        <td class="align-middle">${entry.date}</td>
+                        <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
+                        <td class="token-cell align-middle">${tokenCellHTML}</td>
+                        <td class="align-middle">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+                        <td class="align-middle">$${(entry.rate_usd || 0).toFixed(5)}</td>
+                        <td class="align-middle">$${amount_usd.toFixed(2)}</td>
+                        <td class="align-middle">${entry.description || ''}</td>
+                        <td class="log-table-actions align-middle">
+                            <button class="btn-edit">Taisyti</button>
+                            <button class="btn-delete">Trinti</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
         
-        loggerElements.logTableBody.innerHTML = rowsHTML;
+        loggerElements.logTableBody.innerHTML = finalHTML;
         renderSummary(totalIncomeUSD, totalExpenseUSD, tokenBalances);
     }
     // === PAKEITIMAS BAIGIASI ČIA ===
@@ -353,27 +401,11 @@
             const amount = tokenBalances[token];
             let displayToken = window.appData.tokens[token]?.symbol || token.toUpperCase();
             if (displayToken === 'GST (SOL)') {
-                displayToken = 'GST'; // Remove (SOL) from GST in summary
+                displayToken = 'GST';
             }
             tokenBalancesHTML += `<div class="summary-row"><span class="summary-label">${displayToken} Balansas:</span><span class="summary-value ${amount >= 0 ? 'income-color' : 'expense-color'}">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div>`; 
         });
         loggerElements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2">Bendra suvestinė (pagal filtrus)</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
-    }
-
-    function populateFilterDropdowns(data) {
-        if (!loggerElements.filterToken) return;
-        const uniqueTokens = [...new Set(data.map(item => item.token))];
-        let optionsHTML = '<option value="">Visi</option>';
-        uniqueTokens.sort().forEach(token => { 
-            let displayToken = window.appData.tokens[token]?.symbol || token.toUpperCase();
-            if (displayToken === 'GST (SOL)') {
-                displayToken = 'GST'; // Remove (SOL) from GST in filter
-            }
-            optionsHTML += `<option value="${token}">${displayToken}</option>`; 
-        });
-        const currentValue = loggerElements.filterToken.value;
-        loggerElements.filterToken.innerHTML = optionsHTML;
-        loggerElements.filterToken.value = currentValue;
     }
 
 })();
