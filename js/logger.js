@@ -1,25 +1,55 @@
-// Failas: js/logger.js (Versija su Repair ir Restore kategorijomis)
+// Failas: js/logger.js (Versija V1.0.2 - Atnaujintos visos kategorijos)
 
 (function() {
     'use strict';
     
+    // === PAKEITIMAS PRASIDEDA ČIA: Galutinis kategorijų sąrašas ===
     const CATEGORIES = {
         go: {
-            income: { "GGT Earnings": "GGT Uždarbis", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
-            expense: { "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" }
+            income: { 
+                "GGT Earnings": "GGT Uždarbis", 
+                "Sneaker Rental": "Sportbačių Nuoma",
+                "Sneaker Sale": "Sportbačių Pardavimas",
+                "Shoe Box Sale": "Batų Dėžės (Shoe Box) Pardavimas",
+                "Gem Sale": "Brangakmenių Pardavimas",
+                "Raw Stone Sale": "Neapdirbtų Brangakmenių (Raw Stone) Pardavimas",
+                "Other": "Kita" 
+            },
+            expense: { 
+                "Level-up": "Lygio Kėlimas", 
+                "Minting": "Mintinimas", 
+                "Sneaker Purchase": "Sportbačių Pirkimas",
+                "Shoe Box Purchase": "Batų Dėžės (Shoe Box) Pirkimas",
+                "Gem Purchase": "Brangakmenių Pirkimas",
+                "Mystery Box Speed-up": "Dėžutės Atidarymo Pagreitinimas", 
+                "Raw Stone Upgrade": "Neapdirbtų Brangakmenių (Raw Stone) Lygio Kėlimas",
+                "Mystery Box Slot Purchase": "Papildomų 'Mystery Box' Vietų Pirkimas",
+                "Other": "Kita" 
+            }
         },
         og: {
-            income: { "GST Earnings": "GST Uždarbis", "Sneaker Sale": "Sportbačio pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
+            income: { 
+                "GST Earnings": "GST Uždarbis", 
+                "Sneaker Sale": "Sportbačio Pardavimas", 
+                "Shoe Box Sale": "Batų Dėžės (Shoe Box) Pardavimas",
+                "Gem Sale": "Brangakmenių Pardavimas",
+                "Scroll Sale": "'Minting Scroll' Pardavimas",
+                "Other": "Kita" 
+            },
             expense: { 
                 "Level-up": "Lygio kėlimas", 
                 "Repair": "Taisymas (HP)",
                 "Restore": "Atributų atkūrimas",
                 "Minting": "Mintinimas", 
+                "Sneaker Purchase": "Sportbačių Pirkimas",
+                "Shoe Box Purchase": "Batų Dėžės (Shoe Box) Pirkimas",
                 "Mystery Box opening": "Dėžutės atidarymas", 
+                "Scroll Purchase": "'Minting Scroll' Pirkimas",
                 "Other": "Kita" 
             }
         }
     };
+    // === PAKEITIMAS BAIGIASI ČIA ===
 
     const loggerElements = {};
     let currentLogData = []; 
@@ -299,9 +329,6 @@
 
         if (platform === 'go' && category === 'Level-up') {
             loggerElements.goLevelUpFields.classList.remove('hidden');
-        } else if (platform === 'go' && category === 'Minting') {
-            loggerElements.standardFields.classList.remove('hidden');
-            updateTokenRadioButtons(['ggt']);
         } else if (platform === 'og' && category === 'Level-up') {
             loggerElements.ogLevelUpFields.classList.remove('hidden');
         } else if (platform === 'og' && category === 'Minting') {
@@ -312,8 +339,15 @@
         } else if (platform === 'og' && category === 'Restore') {
             loggerElements.ogRestoreFields.classList.remove('hidden');
         } else if (category) {
+            // Visiems kitiems standartiniams atvejams
             loggerElements.standardFields.classList.remove('hidden');
-            updateTokenRadioButtons(platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc']);
+            let tokensForPlatform = ['gmt', 'sol', 'usdc']; // Numatytieji
+            if (platform === 'go') {
+                tokensForPlatform = ['ggt', 'gmt', 'usdc'];
+            } else if (platform === 'og') {
+                tokensForPlatform = ['gst', 'gmt', 'sol', 'usdc'];
+            }
+            updateTokenRadioButtons(tokensForPlatform);
         }
     }
 
