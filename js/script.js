@@ -1,20 +1,29 @@
-// Failas: js/script.js (Pataisyta versija - numatytasis skirtukas yra 'logger')
+// Failas: js/script.js (Atnaujinta su papildomais žetonais)
 
 (function() {
     'use strict';
-    
-    window.appData = {
-        tokens: {
-            'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', historyApiId: 'stepn', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/18069.png' },
-            'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', historyApiId: 'go-game-token', logo: 'https://assets.coingecko.com/coins/images/40080/standard/ggt.jpg?1725515957' },
-            'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', historyApiId: 'green-satoshi-token', logo: 'https://assets.coingecko.com/coins/images/21841/standard/gst.png?1696521196' },
-            'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', historyApiId: 'solana', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
-            'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', historyApiId: 'usd-coin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png', fixedPrice: 1.0 },
-            'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', historyApiId: 'tether', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png', fixedPrice: 1.0 },
-            'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
-            'pol': { key: 'pol', symbol: 'POL', apiId: 'polygon-ecosystem-token', historyApiId: 'polygon-ecosystem-token', logo: 'https://assets.coingecko.com/coins/images/32440/standard/polygon.png?1698233684' },
-            'bnb': { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', historyApiId: 'binancecoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png' }
-        },
+
+window.appData = {
+    tokens: {
+        'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', historyApiId: 'stepn', logo: 'img/gmt.svg' },
+        'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', historyApiId: 'go-game-token', logo: 'img/ggt.svg' },
+        'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', historyApiId: 'green-satoshi-token', logo: 'img/gst.svg' },
+        'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', historyApiId: 'solana', logo: 'img/sol.svg' },
+        'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', historyApiId: 'usd-coin', logo: 'img/usdc.svg', fixedPrice: 1.0 },
+        'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', historyApiId: 'tether', logo: 'img/usdt.svg', fixedPrice: 1.0 },
+        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'img/btc.svg' },
+        'pol': { key: 'pol', symbol: 'POL', apiId: 'polygon-ecosystem-token', historyApiId: 'polygon-ecosystem-token', logo: 'img/pol.svg' },
+        'bnb': { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', historyApiId: 'binancecoin', logo: 'img/bnb.svg' },
+        
+        // === PRIDĖTA PAGAL JŪSŲ PRAŠYMĄ (su vietinėmis ikonomis) ===
+        'ltc': { key: 'ltc', symbol: 'LTC', apiId: 'litecoin', historyApiId: 'litecoin', logo: 'img/ltc.svg' },
+        'kas': { key: 'kas', symbol: 'KAS', apiId: 'kaspa', historyApiId: 'kaspa', logo: 'img/kaspa.svg' },
+        'xlm': { key: 'xlm', symbol: 'XLM', apiId: 'stellar', historyApiId: 'stellar', logo: 'img/xlm.svg' },
+        'ada': { key: 'ada', symbol: 'ADA', apiId: 'cardano', historyApiId: 'cardano', logo: 'img/cardano.svg' },
+        'ton': { key: 'ton', symbol: 'TON', apiId: 'the-open-network', historyApiId: 'the-open-network', logo: 'img/ton.svg' },
+        'cro': { key: 'cro', symbol: 'CRO', apiId: 'crypto-com-chain', historyApiId: 'crypto-com-chain', logo: 'img/cro.svg' }
+        // ========================================================
+    },
         prices: {},
         initialized: false,
         converterInitialized: false
@@ -51,8 +60,6 @@
                 window.appData.converterInitialized = true;
             }
             
-            // === PAKEITIMAS ČIA ===
-            // Nustatome, kad "Pajamų registratorius" būtų numatytasis skirtukas.
             switchTab('logger');
             
             console.log('App initialized successfully');
@@ -178,3 +185,4 @@
         };
     }
 })();
+
