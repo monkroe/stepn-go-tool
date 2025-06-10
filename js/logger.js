@@ -1,8 +1,9 @@
-// Failas: js/logger.js (Pilna versija su akordeono funkcionalumu)
+// Failas: js/logger.js (Versija su Repair ir Restore kategorijomis)
 
 (function() {
     'use strict';
     
+    // === PAKEITIMAS PRASIDEDA ČIA: Pridėtos naujos kategorijos ===
     const CATEGORIES = {
         go: {
             income: { "GGT Earnings": "GGT Uždarbis", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
@@ -10,9 +11,17 @@
         },
         og: {
             income: { "GST Earnings": "GST Uždarbis", "Sneaker Sale": "Sportbačio pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
-            expense: { "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" }
+            expense: { 
+                "Level-up": "Lygio kėlimas", 
+                "Repair": "Taisymas (HP)",
+                "Restore": "Atributų atkūrimas",
+                "Minting": "Mintinimas", 
+                "Mystery Box opening": "Dėžutės atidarymas", 
+                "Other": "Kita" 
+            }
         }
     };
+    // === PAKEITIMAS BAIGIASI ČIA ===
 
     const loggerElements = {};
     let currentLogData = []; 
@@ -237,28 +246,41 @@
         loggerElements.logCategory.disabled = Object.keys(platformCategories).length === 0;
     }
 
+    // === PAKEITIMAS PRASIDEDA ČIA: Pridėta logika naujoms kategorijoms ===
     function updateVisibleFields() {
         if (!loggerElements.platform || !loggerElements.logCategory) return;
         const platform = loggerElements.platform.value;
         const category = loggerElements.logCategory.value;
         ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields'].forEach(id => { if (loggerElements[id]) loggerElements[id].classList.add('hidden'); });
         const isEditing = !!loggerElements.logForm.dataset.editingId;
+
         if (isEditing) {
             loggerElements.standardFields.classList.remove('hidden');
             loggerElements.editFields.classList.remove('hidden');
             return;
         }
-        if (platform === 'go' && category === 'Level-up') loggerElements.goLevelUpFields.classList.remove('hidden');
-        else if (platform === 'go' && category === 'Minting') {
+
+        if (platform === 'go' && category === 'Level-up') {
+            loggerElements.goLevelUpFields.classList.remove('hidden');
+        } else if (platform === 'go' && category === 'Minting') {
             loggerElements.standardFields.classList.remove('hidden');
             updateTokenRadioButtons(['ggt']);
-        } else if (platform === 'og' && category === 'Level-up') loggerElements.ogLevelUpFields.classList.remove('hidden');
-        else if (platform === 'og' && category === 'Minting') loggerElements.ogMintFields.classList.remove('hidden');
-        else if (category) {
+        } else if (platform === 'og' && category === 'Level-up') {
+            loggerElements.ogLevelUpFields.classList.remove('hidden');
+        } else if (platform === 'og' && category === 'Minting') {
+            loggerElements.ogMintFields.classList.remove('hidden');
+        } else if (platform === 'og' && category === 'Repair') {
+            loggerElements.standardFields.classList.remove('hidden');
+            updateTokenRadioButtons(['gst']); // Repair visada mokama GST
+        } else if (platform === 'og' && category === 'Restore') {
+            loggerElements.standardFields.classList.remove('hidden');
+            updateTokenRadioButtons(['gmt']); // Restore visada mokama GMT
+        } else if (category) {
             loggerElements.standardFields.classList.remove('hidden');
             updateTokenRadioButtons(platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc']);
         }
     }
+    // === PAKEITIMAS BAIGIASI ČIA ===
 
     function updateTokenRadioButtons(tokensToShow) {
         if (!loggerElements.logTokenRadioGroup) return;
