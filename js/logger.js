@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Versija su patikslinta Restore funkcija)
+// Failas: js/logger.js (Pataisyta versija, kuri turėtų veikti)
 
 (function() {
     'use strict';
@@ -44,12 +44,17 @@
             'goLevelUpGgt', 'goLevelUpGmt', 
             'ogLevelUpGst', 'ogLevelUpGmt', 
             'ogMintGst', 'ogMintGmt', 'ogMintScrolls',
-            'ogRestoreGst', 'ogRestoreGmt', 'ogRestoreGemsGmt', // Pridėtas naujas ID
+            'ogRestoreGst', 'ogRestoreGmt', 'ogRestoreGemsGmt',
             'editRateUsd', 'editAmountUsd', 
             'logTableBody', 'summaryContainer', 
             'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn', 'exportCsvBtn' 
         ];
-        ids.forEach(id => { if(document.getElementById(id)) loggerElements[id] = document.getElementById(id); });
+        ids.forEach(id => { 
+            const element = document.getElementById(id);
+            if (element) {
+                loggerElements[id] = element;
+            }
+        });
     }
 
     function bindLoggerEventListeners() {
@@ -113,7 +118,7 @@
             const gst = parseFloat(loggerElements.ogRestoreGst.value) || 0;
             const gmtDirect = parseFloat(loggerElements.ogRestoreGmt.value) || 0;
             const gmtGems = parseFloat(loggerElements.ogRestoreGemsGmt.value) || 0;
-            const totalGmt = gmtDirect + gmtGems; // Susumuojame GMT išlaidas
+            const totalGmt = gmtDirect + gmtGems;
             if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
             if (totalGmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: totalGmt });
         }
@@ -125,7 +130,12 @@
             operations.push({ ...commonData, tokenKey: selectedTokenRadio.value, tokenAmount });
         }
 
-        if (operations.length === 0) throw new Error("Neįvesta jokia suma.");
+        if (operations.length === 0) {
+             const standardTokenAmount = parseFloat(loggerElements.logTokenAmount.value);
+            if (isNaN(standardTokenAmount) || standardTokenAmount <= 0) {
+                 throw new Error("Neįvesta jokia suma.");
+            }
+        }
         for (const op of operations) {
             await createSingleLogEntry(op);
         }
@@ -137,7 +147,8 @@
         loggerElements.logSubmitBtn.textContent = `Išsaugoma ${entryData.tokenKey.toUpperCase()}...`;
         const rate_usd = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date);
         const record = { ...entryData, token: entryData.tokenKey, token_amount: entryData.tokenAmount, rate_usd, user_id: user.id };
-        delete record.tokenKey; delete record.tokenAmount;
+        delete record.tokenKey;
+        delete record.tokenAmount;
         const { error } = await supabase.from('transactions').insert(record);
         if (error) throw error;
     }
@@ -260,8 +271,11 @@
         let optionsHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
         optionsHTML += Object.entries(platformCategories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
         loggerElements.logCategory.innerHTML = optionsHTML;
-        if (platformCategories[currentCategory]) loggerElements.logCategory.value = currentCategory;
-        else loggerElements.logCategory.value = "";
+        if (platformCategories[currentCategory]) {
+            loggerElements.logCategory.value = currentCategory;
+        } else {
+            loggerElements.logCategory.value = "";
+        }
         loggerElements.logCategory.disabled = Object.keys(platformCategories).length === 0;
     }
 
@@ -270,7 +284,9 @@
         const platform = loggerElements.platform.value;
         const category = loggerElements.logCategory.value;
         ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'ogRestoreFields', 'editFields'].forEach(id => { 
-            if (loggerElements[id]) loggerElements[id].classList.add('hidden'); 
+            if (loggerElements[id]) {
+                loggerElements[id].classList.add('hidden'); 
+            }
         });
 
         const isEditing = !!loggerElements.logForm.dataset.editingId;
@@ -313,8 +329,11 @@
         const rate = parseFloat(loggerElements.editRateUsd.value);
         const total = parseFloat(loggerElements.editAmountUsd.value);
         const amount = parseFloat(loggerElements.logTokenAmount.value);
-        if (source === 'rate' && !isNaN(rate) && !isNaN(amount)) loggerElements.editAmountUsd.value = (amount * rate).toFixed(2);
-        else if (source === 'amount' && !isNaN(total) && !isNaN(amount) && amount > 0) loggerElements.editRateUsd.value = (total / amount).toFixed(8);
+        if (source === 'rate' && !isNaN(rate) && !isNaN(amount)) {
+            loggerElements.editAmountUsd.value = (amount * rate).toFixed(2);
+        } else if (source === 'amount' && !isNaN(total) && !isNaN(amount) && amount > 0) {
+            loggerElements.editRateUsd.value = (total / amount).toFixed(8);
+        }
     }
     
     async function loadAndRenderLogTable() {
@@ -331,7 +350,10 @@
         if (loggerElements.filterToken.value) query = query.eq('token', loggerElements.filterToken.value);
         query = query.order(loggerElements.filterSort.value, { ascending: loggerElements.filterOrder.value === 'asc' }).order('id', { ascending: false });
         const { data, error } = await query;
-        if (error) { console.error('Klaida gaunant duomenis:', error); return; }
+        if (error) { 
+            console.error('Klaida gaunant duomenis:', error); 
+            return; 
+        }
         
         currentLogData = data || [];
         renderLogTable(currentLogData);
@@ -351,7 +373,9 @@
         });
         const currentValue = loggerElements.filterToken.value;
         loggerElements.filterToken.innerHTML = optionsHTML;
-        loggerElements.filterToken.value = currentValue;
+        if (uniqueTokens.includes(currentValue)) {
+            loggerElements.filterToken.value = currentValue;
+        }
     }
 
     function groupTransactionsByDate(transactions) {
