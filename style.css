@@ -236,4 +236,15 @@ td:nth-child(7) {
     vertical-align: middle; 
     border-radius: 50%;
 }
+/* ================================================ */
+/* PATAISYMAS: Įrašų formos ikonų dydis       */
+/* ================================================ */
+
+.radio-label .token-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%; /* Išlaiko ikonas apvalias */
+    object-fit: cover;  /* Gražiai pritaiko paveikslėlį rėmelyje */
+    flex-shrink: 0;     /* Svarbu, kad ikona nesusispaustų šalia teksto */
+}
 
