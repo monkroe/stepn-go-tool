@@ -14,7 +14,7 @@
         <h1 class="text-2xl font-bold text-center mb-6">STEPN GO Įrankis</h1>
         <nav class="flex space-x-2 sm:space-x-4 border-b border-gray-700 pb-2 mb-4">
             <button id="tab-btn-logger" class="tab-button active" data-tab="logger">Pajamų/Išlaidų Registratorius</button>
-            <button id="tab-btn-converter" class="tab-button" data-tab="converter">Žetonų Kainos</button>
+            <button id="tab-btn-converter" class="tab-button" data-tab="converter">Žetonų kainos</button>
         </nav>
         <div class="text-center my-4">
             <button id="login-btn" class="primary-btn">Prisijungti per Google</button>
@@ -33,7 +33,6 @@
                             <option value="og">STEPN OG</option>
                         </select>
                     </div>
-
                     <div class="grid-2-cols">
                         <div class="input-group"><label for="logDate">Data</label><input type="date" id="logDate" required></div>
                         <div class="input-group"><label for="logType">Tipas</label>
@@ -45,14 +44,12 @@
                         </div>
                     </div>
                     <div class="input-group"><label for="logCategory">Kategorija</label><select id="logCategory" required><option value="" disabled selected>Pasirinkite kategoriją...</option></select></div>
-                    
                     <div id="standardFields" class="hidden"><div class="grid-2-cols"><div class="input-group"><label>Žetonas</label><div id="logTokenRadioGroup" class="radio-group"></div></div><div class="input-group"><label for="logTokenAmount">Suma (žetonais)</label><input type="number" id="logTokenAmount" step="any" placeholder="Kiekis"></div></div></div>
-                    
                     <div id="goLevelUpFields" class="hidden grid-2-cols">
                         <div class="input-group"><label for="goLevelUpGgt">GGT Suma</label><input type="number" id="goLevelUpGgt" step="any" placeholder="GGT kiekis"></div>
                         <div class="input-group"><label for="goLevelUpGmt">GMT Suma</label><input type="number" id="goLevelUpGmt" step="any" placeholder="GMT kiekis"></div>
                     </div>
-                     <div id="ogLevelUpFields" class="hidden grid-2-cols">
+                    <div id="ogLevelUpFields" class="hidden grid-2-cols">
                         <div class="input-group"><label for="ogLevelUpGst">GST Suma</label><input type="number" id="ogLevelUpGst" step="any" placeholder="GST kiekis"></div>
                         <div class="input-group"><label for="ogLevelUpGmt">GMT Suma</label><input type="number" id="ogLevelUpGmt" step="any" placeholder="GMT kiekis"></div>
                     </div>
@@ -63,12 +60,10 @@
                         </div>
                         <div class="input-group"><label for="ogMintScrolls">Minting Scrolls Kiekis</label><input type="number" id="ogMintScrolls" step="1" placeholder="pvz., 2"></div>
                     </div>
-                    
                     <div id="editFields" class="hidden grid-2-cols">
                         <div class="input-group"><label for="editRateUsd">Kursas (USD)</label><input type="number" id="editRateUsd" step="any"></div>
                         <div class="input-group"><label for="editAmountUsd">Suma (USD)</label><input type="number" id="editAmountUsd" step="any"></div>
                     </div>
-                    
                     <div class="input-group mt-4"><label for="logDescription">Aprašymas (nebūtina)</label><input type="text" id="logDescription" placeholder="pvz., Parduotas 'Jogger'"></div>
                     <button id="logSubmitBtn" type="submit" class="primary-btn">Pridėti įrašą</button>
                 </form>
@@ -84,11 +79,10 @@
                     <button id="filterBtn" class="primary-btn h-10">Filtruoti</button>
                 </div>
                 
-                <div class="flex justify-between items-center my-4">
-                    <h2 class="text-xl font-semibold">Transakcijų sąrašas</h2>
-                    <button id="exportCsvBtn" class="primary-btn w-auto text-sm py-1 px-4">Eksportuoti</button>
+                <div class="flex justify-between items-center my-4 gap-4">
+                    <h2 class="text-xl font-semibold flex-grow">Transakcijų sąrašas</h2>
+                    <button id="exportCsvBtn" class="primary-btn w-auto text-xs py-2 px-4 flex-shrink-0">Eksportuoti</button>
                 </div>
-
                 <div class="overflow-x-auto">
                     <table class="min-w-full">
                         <thead>
