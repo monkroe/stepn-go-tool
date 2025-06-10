@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Galutinė versija su visomis funkcijomis)
+// Failas: js/logger.js (Pilna versija su akordeono funkcionalumu)
 
 (function() {
     'use strict';
@@ -135,22 +135,49 @@
     }
 
     async function handleLogTableClick(event) {
-        const target = event.target.closest('button');
-        if (!target) return;
-        const row = target.closest('tr');
-        if (!row || !row.dataset.id) return;
-        const entryId = parseInt(row.dataset.id);
-        if (target.matches('.btn-delete')) {
-            if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
-                const { error } = await supabase.from('transactions').delete().eq('id', entryId);
-                if (error) alert(`Klaida trinant: ${error.message}`);
-                else await loadAndRenderLogTable();
-            }
-        } else if (target.matches('.btn-edit')) {
-            const { data, error } = await supabase.from('transactions').select().eq('id', entryId).single();
-            if (error) { alert(`Klaida gaunant įrašą: ${error.message}`); return; }
-            startEditEntry(data);
+        const target = event.target;
+        const separatorRow = target.closest('.date-separator-row');
+        const actionButton = target.closest('button');
+
+        if (separatorRow) {
+            handleAccordionToggle(separatorRow);
+            return;
         }
+
+        if (actionButton) {
+            const row = actionButton.closest('tr');
+            if (!row || !row.dataset.id) return;
+            const entryId = parseInt(row.dataset.id);
+
+            if (actionButton.matches('.btn-delete')) {
+                if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
+                    const { error } = await supabase.from('transactions').delete().eq('id', entryId);
+                    if (error) alert(`Klaida trinant: ${error.message}`);
+                    else await loadAndRenderLogTable();
+                }
+            } else if (actionButton.matches('.btn-edit')) {
+                const { data, error } = await supabase.from('transactions').select().eq('id', entryId).single();
+                if (error) { alert(`Klaida gaunant įrašą: ${error.message}`); return; }
+                startEditEntry(data);
+            }
+        }
+    }
+    
+    function handleAccordionToggle(separatorRow) {
+        const date = separatorRow.dataset.dateGroup;
+        if (!date) return;
+        
+        const isExpanded = separatorRow.classList.toggle('expanded');
+        
+        const arrowIcon = separatorRow.querySelector('.toggle-arrow');
+        if (arrowIcon) {
+            arrowIcon.textContent = isExpanded ? '▾' : '▸';
+        }
+
+        const transactionRows = document.querySelectorAll(`.transaction-row[data-date-group="${date}"]`);
+        transactionRows.forEach(row => {
+            row.classList.toggle('hidden');
+        });
     }
 
     function startEditEntry(entry) {
@@ -320,7 +347,6 @@
 
         const groupedData = groupTransactionsByDate(data);
         const dates = Object.keys(groupedData);
-
         let totalIncomeUSD = 0, totalExpenseUSD = 0;
         const tokenBalances = {};
         let finalHTML = '';
@@ -333,10 +359,13 @@
             const netSign = dailyNet >= 0 ? '+' : '';
 
             finalHTML += `
-                <tr class="date-separator-row">
+                <tr class="date-separator-row" data-date-group="${date}">
                     <td colspan="8">
                         <div class="date-separator-content">
-                            <span class="date-display">${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            <span class="date-display">
+                                <span class="toggle-arrow">▸</span>
+                                ${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                            </span>
                             <span class="daily-summary">
                                 <span class="daily-income">+${group.dailyIncome.toFixed(2)}</span>
                                 <span class="daily-expense">-${group.dailyExpense.toFixed(2)}</span>
@@ -363,7 +392,7 @@
                 const arrow = isIncome ? '▲' : '▼';
 
                 finalHTML += `
-                    <tr data-id="${entry.id}">
+                    <tr class="transaction-row hidden" data-id="${entry.id}" data-date-group="${date}">
                         <td class="align-middle">${entry.date}</td>
                         <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
                         <td class="token-cell align-middle">${tokenCellHTML}</td>
@@ -408,9 +437,7 @@
                 alert('Nėra duomenų, kuriuos būtų galima eksportuoti.');
                 return;
             }
-
             const headers = [ "Data", "Platforma", "Tipas", "Kategorija", "Žetonas", "Kiekis", "Kursas (USD)", "Suma (USD)", "Aprašymas" ];
-
             const rows = currentLogData.map(entry => {
                 const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
                 return [
@@ -425,14 +452,11 @@
                     entry.description || ''
                 ].map(field => String(field)); 
             });
-
             const csvContent = [
                 headers.join(','),
                 ...rows.map(row => row.map(escapeCsvField).join(','))
             ].join('\n');
-
             downloadCsv(csvContent);
-
         } catch (error) {
             console.error("Įvyko klaida eksportuojant CSV:", error);
             alert(`Eksportavimo klaida: ${error.message}\n\nPrašome patikrinti F12 konsolę detalesnei informacijai.`);
