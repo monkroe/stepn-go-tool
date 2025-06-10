@@ -1,9 +1,8 @@
-// Failas: js/logger.js (Versija su dienos pajamų/išlaidų suvestine)
+// Failas: js/logger.js (Versija su dienos grynuoju balansu)
 
 (function() {
     'use strict';
     
-    // ... (visas kodas iki 'loadAndRenderLogTable' lieka nepakitęs) ...
     const CATEGORIES = {
         go: {
             income: { "GGT Earnings": "GGT Uždarbis", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
@@ -285,11 +284,6 @@
 
     // === PAKEITIMAS PRASIDEDA ČIA ===
 
-    /**
-     * Helper funkcija, kuri grupuoja transakcijas pagal datą ir apskaičiuoja dienos suvestines.
-     * @param {Array} transactions - Išrikiuotas transakcijų masyvas.
-     * @returns {Object} - Objektas, kur raktai yra datos, o reikšmės - objektai su transakcijomis ir suvestinėmis.
-     */
     function groupTransactionsByDate(transactions) {
         return transactions.reduce((acc, entry) => {
             const date = entry.date;
@@ -311,10 +305,6 @@
         }, {});
     }
 
-    /**
-     * Pagrindinė funkcija, kuri generuoja transakcijų lentelę su dienos suvestinėmis.
-     * @param {Array} data - Neapdorotas transakcijų masyvas iš duomenų bazės.
-     */
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
         loggerElements.logTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Kraunama...</td></tr>';
@@ -335,8 +325,12 @@
         dates.forEach(date => {
             const group = groupedData[date];
             const displayDate = new Date(date + 'T00:00:00');
+            
+            // Apskaičiuojame dienos grynąjį balansą
+            const dailyNet = group.dailyIncome - group.dailyExpense;
+            const netColorClass = dailyNet >= 0 ? 'income-color' : 'expense-color';
+            const netSign = dailyNet >= 0 ? '+' : '';
 
-            // 1. Sukuriame datos eilutę su suvestine
             finalHTML += `
                 <tr class="date-separator-row">
                     <td colspan="8">
@@ -345,13 +339,13 @@
                             <span class="daily-summary">
                                 <span class="daily-income">+${group.dailyIncome.toFixed(2)}</span>
                                 <span class="daily-expense">-${group.dailyExpense.toFixed(2)}</span>
+                                <span class="daily-net ${netColorClass}">${netSign}${dailyNet.toFixed(2)}</span>
                             </span>
                         </div>
                     </td>
                 </tr>
             `;
 
-            // 2. Pridedame tos dienos transakcijas
             group.transactions.forEach(entry => {
                 const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
                 const isIncome = entry.type === 'income';
