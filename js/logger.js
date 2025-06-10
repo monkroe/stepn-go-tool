@@ -1,39 +1,39 @@
-// Failas: js/logger.js (Versija V1.0.2 - Atnaujintos visos kategorijos)
+// Failas: js/logger.js (Versija V1.0.3 - suvienodinti kategorijų pavadinimai)
 
 (function() {
     'use strict';
     
-    // === PAKEITIMAS PRASIDEDA ČIA: Galutinis kategorijų sąrašas ===
+    // === PAKEITIMAS PRASIDEDA ČIA: Kategorijų pavadinimai pakeisti į "Sentence case" ===
     const CATEGORIES = {
         go: {
             income: { 
-                "GGT Earnings": "GGT Uždarbis", 
-                "Sneaker Rental": "Sportbačių Nuoma",
-                "Sneaker Sale": "Sportbačių Pardavimas",
-                "Shoe Box Sale": "Batų Dėžės (Shoe Box) Pardavimas",
-                "Gem Sale": "Brangakmenių Pardavimas",
-                "Raw Stone Sale": "Neapdirbtų Brangakmenių (Raw Stone) Pardavimas",
+                "GGT Earnings": "GGT uždarbis", 
+                "Sneaker Rental": "Sportbačių nuoma",
+                "Sneaker Sale": "Sportbačių pardavimas",
+                "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas",
+                "Gem Sale": "Brangakmenių pardavimas",
+                "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas",
                 "Other": "Kita" 
             },
             expense: { 
-                "Level-up": "Lygio Kėlimas", 
+                "Level-up": "Lygio kėlimas", 
                 "Minting": "Mintinimas", 
-                "Sneaker Purchase": "Sportbačių Pirkimas",
-                "Shoe Box Purchase": "Batų Dėžės (Shoe Box) Pirkimas",
-                "Gem Purchase": "Brangakmenių Pirkimas",
-                "Mystery Box Speed-up": "Dėžutės Atidarymo Pagreitinimas", 
-                "Raw Stone Upgrade": "Neapdirbtų Brangakmenių (Raw Stone) Lygio Kėlimas",
-                "Mystery Box Slot Purchase": "Papildomų 'Mystery Box' Vietų Pirkimas",
+                "Sneaker Purchase": "Sportbačių pirkimas",
+                "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas",
+                "Gem Purchase": "Brangakmenių pirkimas",
+                "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", 
+                "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas",
+                "Mystery Box Slot Purchase": "Papildomų 'Mystery Box' vietų pirkimas",
                 "Other": "Kita" 
             }
         },
         og: {
             income: { 
-                "GST Earnings": "GST Uždarbis", 
-                "Sneaker Sale": "Sportbačio Pardavimas", 
-                "Shoe Box Sale": "Batų Dėžės (Shoe Box) Pardavimas",
-                "Gem Sale": "Brangakmenių Pardavimas",
-                "Scroll Sale": "'Minting Scroll' Pardavimas",
+                "GST Earnings": "GST uždarbis", 
+                "Sneaker Sale": "Sportbačio pardavimas", 
+                "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas",
+                "Gem Sale": "Brangakmenių pardavimas",
+                "Scroll Sale": "'Minting Scroll' pardavimas",
                 "Other": "Kita" 
             },
             expense: { 
@@ -41,10 +41,10 @@
                 "Repair": "Taisymas (HP)",
                 "Restore": "Atributų atkūrimas",
                 "Minting": "Mintinimas", 
-                "Sneaker Purchase": "Sportbačių Pirkimas",
-                "Shoe Box Purchase": "Batų Dėžės (Shoe Box) Pirkimas",
+                "Sneaker Purchase": "Sportbačių pirkimas",
+                "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas",
                 "Mystery Box opening": "Dėžutės atidarymas", 
-                "Scroll Purchase": "'Minting Scroll' Pirkimas",
+                "Scroll Purchase": "'Minting Scroll' pirkimas",
                 "Other": "Kita" 
             }
         }
@@ -339,9 +339,8 @@
         } else if (platform === 'og' && category === 'Restore') {
             loggerElements.ogRestoreFields.classList.remove('hidden');
         } else if (category) {
-            // Visiems kitiems standartiniams atvejams
             loggerElements.standardFields.classList.remove('hidden');
-            let tokensForPlatform = ['gmt', 'sol', 'usdc']; // Numatytieji
+            let tokensForPlatform = ['gmt', 'sol', 'usdc'];
             if (platform === 'go') {
                 tokensForPlatform = ['ggt', 'gmt', 'usdc'];
             } else if (platform === 'og') {
