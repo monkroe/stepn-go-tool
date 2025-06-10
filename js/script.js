@@ -14,15 +14,12 @@ window.appData = {
         'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'img/btc.svg' },
         'pol': { key: 'pol', symbol: 'POL', apiId: 'polygon-ecosystem-token', historyApiId: 'polygon-ecosystem-token', logo: 'img/pol.svg' },
         'bnb': { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', historyApiId: 'binancecoin', logo: 'img/bnb.svg' },
-        
-        // === PRIDĖTA PAGAL JŪSŲ PRAŠYMĄ (su vietinėmis ikonomis) ===
         'ltc': { key: 'ltc', symbol: 'LTC', apiId: 'litecoin', historyApiId: 'litecoin', logo: 'img/ltc.svg' },
         'kas': { key: 'kas', symbol: 'KAS', apiId: 'kaspa', historyApiId: 'kaspa', logo: 'img/kaspa.svg' },
         'xlm': { key: 'xlm', symbol: 'XLM', apiId: 'stellar', historyApiId: 'stellar', logo: 'img/xlm.svg' },
         'ada': { key: 'ada', symbol: 'ADA', apiId: 'cardano', historyApiId: 'cardano', logo: 'img/cardano.svg' },
         'ton': { key: 'ton', symbol: 'TON', apiId: 'the-open-network', historyApiId: 'the-open-network', logo: 'img/ton.svg' },
         'cro': { key: 'cro', symbol: 'CRO', apiId: 'crypto-com-chain', historyApiId: 'crypto-com-chain', logo: 'img/cro.svg' }
-        // ========================================================
     },
         prices: {},
         initialized: false,
