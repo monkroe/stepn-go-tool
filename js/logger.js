@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Versija su dienos grynuoju balansu)
+// Failas: js/logger.js (Versija su CSV eksportavimo funkcija)
 
 (function() {
     'use strict';
@@ -15,6 +15,7 @@
     };
 
     const loggerElements = {};
+    let currentLogData = []; // Kintamasis saugoti filtruotiems duomenims
 
     window.appActions = window.appActions || {};
     window.appActions.initLogger = initLogger;
@@ -29,7 +30,8 @@
     }
 
     function cacheLoggerElements() {
-        const ids = [ 'logForm', 'platform', 'logDate', 'logType', 'logCategory', 'logDescription', 'logSubmitBtn', 'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields', 'logTokenRadioGroup', 'logTokenAmount', 'goLevelUpGgt', 'goLevelUpGmt', 'ogLevelUpGst', 'ogLevelUpGmt', 'ogMintGst', 'ogMintGmt', 'ogMintScrolls', 'editRateUsd', 'editAmountUsd', 'logTableBody', 'summaryContainer', 'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn' ];
+        // Pridedame naujo mygtuko ID
+        const ids = [ 'logForm', 'platform', 'logDate', 'logType', 'logCategory', 'logDescription', 'logSubmitBtn', 'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields', 'logTokenRadioGroup', 'logTokenAmount', 'goLevelUpGgt', 'goLevelUpGmt', 'ogLevelUpGst', 'ogLevelUpGmt', 'ogMintGst', 'ogMintGmt', 'ogMintScrolls', 'editRateUsd', 'editAmountUsd', 'logTableBody', 'summaryContainer', 'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn', 'exportCsvBtn' ];
         ids.forEach(id => { if(document.getElementById(id)) loggerElements[id] = document.getElementById(id); });
     }
 
@@ -37,6 +39,8 @@
         if (loggerElements.logForm) loggerElements.logForm.addEventListener('submit', handleLogSubmit);
         if (loggerElements.logTableBody) loggerElements.logTableBody.addEventListener('click', handleLogTableClick);
         if (loggerElements.filterBtn) loggerElements.filterBtn.addEventListener('click', loadAndRenderLogTable);
+        // Pridedame event listener naujam mygtukui
+        if (loggerElements.exportCsvBtn) loggerElements.exportCsvBtn.addEventListener('click', handleExportToCsv);
         if (loggerElements.platform) loggerElements.platform.addEventListener('change', updateDynamicForm);
         if (loggerElements.logType) loggerElements.logType.addEventListener('change', updateDynamicForm);
         if (loggerElements.logCategory) loggerElements.logCategory.addEventListener('change', updateDynamicForm);
@@ -44,6 +48,7 @@
         if (loggerElements.editAmountUsd) loggerElements.editAmountUsd.addEventListener('input', () => syncEditInputs('amount'));
     }
 
+    // ... (visas kodas iki `loadAndRenderLogTable` lieka toks pat) ...
     async function handleLogSubmit(event) {
         event.preventDefault();
         const editingId = loggerElements.logForm.dataset.editingId;
@@ -248,11 +253,13 @@
         else if (source === 'amount' && !isNaN(total) && !isNaN(amount) && amount > 0) loggerElements.editRateUsd.value = (total / amount).toFixed(8);
     }
     
+    // Pakeista funkcija, kad išsaugotų duomenis į `currentLogData`
     async function loadAndRenderLogTable() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            renderLogTable([]);
-            populateFilterDropdowns([]);
+            currentLogData = []; // Išvalome duomenis atsijungus
+            renderLogTable(currentLogData);
+            populateFilterDropdowns(currentLogData);
             return;
         }
         let query = supabase.from('transactions').select('*').eq('user_id', user.id);
@@ -262,27 +269,13 @@
         query = query.order(loggerElements.filterSort.value, { ascending: loggerElements.filterOrder.value === 'asc' }).order('id', { ascending: false });
         const { data, error } = await query;
         if (error) { console.error('Klaida gaunant duomenis:', error); return; }
-        renderLogTable(data);
-        populateFilterDropdowns(data);
+        
+        currentLogData = data || []; // Išsaugome duomenis
+        renderLogTable(currentLogData);
+        populateFilterDropdowns(currentLogData);
     }
     
-    function populateFilterDropdowns(data) {
-        if (!loggerElements.filterToken) return;
-        const uniqueTokens = [...new Set(data.map(item => item.token))];
-        let optionsHTML = '<option value="">Visi</option>';
-        uniqueTokens.sort().forEach(token => { 
-            let displayToken = window.appData.tokens[token]?.symbol || token.toUpperCase();
-            if (displayToken === 'GST (SOL)') {
-                displayToken = 'GST';
-            }
-            optionsHTML += `<option value="${token}">${displayToken}</option>`; 
-        });
-        const currentValue = loggerElements.filterToken.value;
-        loggerElements.filterToken.innerHTML = optionsHTML;
-        loggerElements.filterToken.value = currentValue;
-    }
-
-    // === PAKEITIMAS PRASIDEDA ČIA ===
+    // ... (renderLogTable, groupTransactionsByDate, ir kitos funkcijos lieka tokios pačios) ...
 
     function groupTransactionsByDate(transactions) {
         return transactions.reduce((acc, entry) => {
@@ -325,8 +318,6 @@
         dates.forEach(date => {
             const group = groupedData[date];
             const displayDate = new Date(date + 'T00:00:00');
-            
-            // Apskaičiuojame dienos grynąjį balansą
             const dailyNet = group.dailyIncome - group.dailyExpense;
             const netColorClass = dailyNet >= 0 ? 'income-color' : 'expense-color';
             const netSign = dailyNet >= 0 ? '+' : '';
@@ -382,7 +373,6 @@
         loggerElements.logTableBody.innerHTML = finalHTML;
         renderSummary(totalIncomeUSD, totalExpenseUSD, tokenBalances);
     }
-    // === PAKEITIMAS BAIGIASI ČIA ===
     
     function renderSummary(income, expense, tokenBalances) {
         if (!loggerElements.summaryContainer) return;
@@ -402,5 +392,86 @@
         loggerElements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2">Bendra suvestinė (pagal filtrus)</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
     }
 
+    // === NAUJOS FUNKCIJOS CSV EKSPORTUI ===
+    
+    /**
+     * Surenka matomus duomenis, konvertuoja juos į CSV formatą ir inicijuoja failo atsisiuntimą.
+     */
+    function handleExportToCsv() {
+        if (currentLogData.length === 0) {
+            alert('Nėra duomenų, kuriuos būtų galima eksportuoti.');
+            return;
+        }
+
+        const headers = [
+            "Data",
+            "Platforma",
+            "Tipas",
+            "Kategorija",
+            "Žetonas",
+            "Kiekis",
+            "Kursas (USD)",
+            "Suma (USD)",
+            "Aprašymas"
+        ];
+
+        const rows = currentLogData.map(entry => {
+            const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
+            return [
+                entry.date,
+                entry.platform.toUpperCase(),
+                entry.type === 'income' ? 'Pajamos' : 'Išlaidos',
+                entry.category,
+                entry.token.toUpperCase(),
+                entry.token_amount || 0,
+                entry.rate_usd || 0,
+                amount_usd,
+                entry.description || ''
+            ];
+        });
+
+        // Konvertuojame į CSV eilutes
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(escapeCsvField).join(','))
+        ].join('\n');
+
+        downloadCsv(csvContent);
+    }
+
+    /**
+     * Paruošia laukelio reikšmę CSV formatui (prideda kabutes, jei reikia).
+     * @param {string|number} field - Langelio reikšmė.
+     * @returns {string} - Paruošta reikšmė.
+     */
+    function escapeCsvField(field) {
+        let fieldStr = String(field);
+        // Jei laukelyje yra kablelis, tarpas ar kabutės, apgaubiame jį dvigubomis kabutėmis.
+        if (fieldStr.includes(',') || fieldStr.includes('"') || fieldStr.includes('\n')) {
+            // Dvigubas kabutes viduje pakeičiame dvejomis dvigubomis kabutėmis.
+            fieldStr = '"' + fieldStr.replace(/"/g, '""') + '"';
+        }
+        return fieldStr;
+    }
+
+    /**
+     * Sukuria ir paleidžia failo atsisiuntimą naršyklėje.
+     * @param {string} csvContent - Visas CSV failo turinys.
+     */
+    function downloadCsv(csvContent) {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        
+        const today = new Date().toISOString().slice(0, 10);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `stepn-go-transakcijos-${today}.csv`);
+        
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
 })();
 
