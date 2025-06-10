@@ -1,4 +1,4 @@
-// Failas: js/converter.js (Pataisyta versija su specifine rikiavimo tvarka)
+// Failas: js/converter.js (Pataisyta versija su papildytais žetonais ir rikiavimo tvarka)
 
 (function() {
     'use strict';
@@ -40,25 +40,30 @@
         }
     }
 
-    // === PATAISYTA FUNKCIJA SU NAUJA RIKIAVIMO LOGIKA ===
     function generateConverterCards() {
         if (!elements['converter-grid']) return;
         
-        // 1. Sukuriame sąrašą su norima rikiavimo tvarka pagal žetonų 'key'.
-        const displayOrder = ['usdc', 'gmt', 'ggt', 'gst', 'sol', 'pol', 'bnb', 'btc', 'usdt'];
+        // === PAKEITIMAS ČIA: Papildytas ir surikiuotas masyvas ===
+        // Šis masyvas nustato, kuria tvarka žetonai bus rodomi konverteryje.
+        const displayOrder = [
+            // STEPN žetonai
+            'gmt', 'ggt', 'gst', 
+            // Pagrindinės kriptovaliutos
+            'btc', 'sol', 'bnb', 'ada', 'ton', 'ltc', 'kas', 'xlm', 'cro', 'pol',
+            // Stabilios valiutos (Stablecoins)
+            'usdc', 'usdt'
+        ];
+        // ==========================================================
 
         const tokensToDisplay = Object.values(ALL_TOKENS_CONFIG);
 
-        // 2. Rikiuojame žetonus pagal 'displayOrder' sąrašą.
         tokensToDisplay.sort((a, b) => {
             const indexA = displayOrder.indexOf(a.key);
             const indexB = displayOrder.indexOf(b.key);
 
-            // Jei žetono nėra sąraše, nusiunčiame jį į galą.
             if (indexA === -1) return 1;
             if (indexB === -1) return -1;
             
-            // Rikiuojame pagal indeksą sąraše.
             return indexA - indexB;
         });
         
@@ -213,3 +218,4 @@
         }
     }
 })();
+
