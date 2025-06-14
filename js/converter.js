@@ -1,4 +1,4 @@
-// Failas: js/converter.js (Versija su patobulintu kainų formatavimu)
+// Failas: js/converter.js (Versija be Fiat USD ir su teisingu formatavimu)
 
 (function() {
     'use strict';
@@ -44,7 +44,6 @@
         if (!elements['converter-grid']) return;
         
         const displayOrder = [
-            'usd', 
             'gmt', 'ggt', 'gst', 
             'btc', 'sol', 'bnb', 'ada', 'ton', 'ltc', 'kas', 'xlm', 'cro', 'pol',
             'usdc', 'usdt'
@@ -127,14 +126,16 @@
             if (price !== 'N/A') {
                 const options = {
                     minimumFractionDigits: 2,
-                    maximumFractionDigits: 6
+                    maximumFractionDigits: 6,
+                    useGrouping: true // Įjungiame grupavimą
                 };
 
                 if (price >= 1) {
                     options.maximumFractionDigits = 2;
                 }
                 
-                const formattedPrice = price.toLocaleString('fr-FR', options);
+                // Naudojame 'en-US' lokalę, kuri naudoja kablelį, ir jį pakeičiame tarpu
+                const formattedPrice = price.toLocaleString('en-US', options).replace(/,/g, ' ');
                 priceEl.textContent = `$${formattedPrice}`;
             } else {
                 priceEl.textContent = 'N/A';
@@ -235,3 +236,4 @@
         }
     }
 })();
+
