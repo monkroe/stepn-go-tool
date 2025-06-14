@@ -1,4 +1,4 @@
-// Failas: js/converter.js (Pataisyta versija su papildytais žetonais ir rikiavimo tvarka)
+// Failas: js/converter.js (Versija su patobulintu kainų formatavimu)
 
 (function() {
     'use strict';
@@ -43,17 +43,12 @@
     function generateConverterCards() {
         if (!elements['converter-grid']) return;
         
-        // === PAKEITIMAS ČIA: Papildytas ir surikiuotas masyvas ===
-        // Šis masyvas nustato, kuria tvarka žetonai bus rodomi konverteryje.
         const displayOrder = [
-            // STEPN žetonai
+            'usd', 
             'gmt', 'ggt', 'gst', 
-            // Pagrindinės kriptovaliutos
             'btc', 'sol', 'bnb', 'ada', 'ton', 'ltc', 'kas', 'xlm', 'cro', 'pol',
-            // Stabilios valiutos (Stablecoins)
             'usdc', 'usdt'
         ];
-        // ==========================================================
 
         const tokensToDisplay = Object.values(ALL_TOKENS_CONFIG);
 
@@ -100,7 +95,6 @@
             </div>`;
     }
     
-    // Likusios funkcijos lieka nepakeistos
     function updateConverterPricesUI() {
         if (!window.appData?.prices) return;
         liveTokenPrices = window.appData.prices;
@@ -113,26 +107,49 @@
     function updateSingleCardPrice(card, tokenKey) {
         const tokenConfig = ALL_TOKENS_CONFIG[tokenKey];
         if (!tokenConfig) return;
+
         const priceData = liveTokenPrices[tokenConfig.apiId];
         const priceEl = card.querySelector(`#price-${tokenKey}`);
         const changeEl = card.querySelector(`#change-${tokenKey}`);
         const timeEl = card.querySelector(`#time-${tokenKey}`);
+
         let price = 'N/A';
         let change = 0;
+
         if (tokenConfig.fixedPrice) {
             price = tokenConfig.fixedPrice;
         } else if (priceData && typeof priceData.price !== 'undefined') {
             price = priceData.price;
             change = priceData.change || 0;
         }
-        priceEl.textContent = price !== 'N/A' ? `$${price >= 1 ? price.toFixed(2) : price.toFixed(6)}` : 'N/A';
+
+        if (priceEl) {
+            if (price !== 'N/A') {
+                const options = {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 6
+                };
+
+                if (price >= 1) {
+                    options.maximumFractionDigits = 2;
+                }
+                
+                const formattedPrice = price.toLocaleString('fr-FR', options);
+                priceEl.textContent = `$${formattedPrice}`;
+            } else {
+                priceEl.textContent = 'N/A';
+            }
+        }
+        
         updatePriceChange(changeEl, change);
+
         if (timeEl) {
             timeEl.textContent = `Atnaujinta: ${new Date().toLocaleTimeString('lt-LT')}`;
         }
     }
 
     function updatePriceChange(changeEl, change) {
+        if (!changeEl) return;
         changeEl.classList.remove('price-up', 'price-down');
         if (change > 0) {
             changeEl.textContent = `▲ +${change.toFixed(2)}%`;
@@ -193,7 +210,7 @@
             }
             if (sourceInput !== amountInput && price > 0) {
                 const amount = usdValue / price;
-                amountInput.value = isNaN(amount) ? '' : (amount >= 1 ? amount.toFixed(2) : amount.toFixed(8));
+                amountInput.value = isNaN(amount) ? '' : amount.toFixed(8); 
             }
         });
     }
@@ -218,4 +235,3 @@
         }
     }
 })();
-
