@@ -269,3 +269,11 @@ td:nth-child(2) {
     border: 1px solid currentColor;
     font-size: 0.85rem;
 }
+/* === Poraštės stiliai === */
+.app-footer {
+    text-align: center;
+    padding: 2rem 1rem 1rem 1rem;
+    font-size: 0.75rem;
+    color: #4b5563; /* Pilka spalva */
+    line-height: 1.2;
+}
