@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Versija su patikslinta Minting išlaidų logika)
+// Failas: js/logger.js (Pataisyta klaida su 'value')
 
 (function() {
     'use strict';
@@ -614,3 +614,4 @@
     }
     
 })();
+
