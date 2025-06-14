@@ -1,11 +1,10 @@
-// Failas: js/script.js (Versija su dinaminėmis stablecoin kainomis)
+// Failas: js/script.js (Versija be Fiat USD)
 
 (function() {
     'use strict';
     
     window.appData = {
         tokens: {
-            'usd': { key: 'usd', symbol: 'USD', apiId: null, historyApiId: null, logo: 'img/usd.svg', fixedPrice: 1.0 },
             'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', historyApiId: 'stepn', logo: 'img/gmt.svg' },
             'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', historyApiId: 'go-game-token', logo: 'img/ggt.svg' },
             'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', historyApiId: 'green-satoshi-token', logo: 'img/gst.svg' },
