@@ -118,6 +118,7 @@
 
     <footer class="app-footer">
         <p>Made with ❤️ and AI help</p>
+        <p>&copy; <span id="current-year"></span> LTV Media PRO. Visos teisės saugomos.</p>
         <p>Version 1.0.5</p>
     </footer>
 
@@ -126,6 +127,10 @@
     <script src="js/logger.js" defer></script>
     <script src="js/converter.js" defer></script>
     <script src="js/script.js" defer></script> 
+    
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>
 
