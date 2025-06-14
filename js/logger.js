@@ -1,55 +1,18 @@
-// Failas: js/logger.js (Versija su kategorijų rikiavimu pagal svarbą)
+// Failas: js/logger.js (Versija su patikslinta Minting išlaidų logika)
 
 (function() {
     'use strict';
     
-    // === PAKEITIMAS PRASIDEDA ČIA: Pakeista kategorijų eilės tvarka ===
     const CATEGORIES = {
         go: {
-            income: { 
-                "GGT Earnings": "GGT uždarbis", 
-                "Sneaker Rental": "Sportbačių nuoma",
-                "Sneaker Sale": "Sportbačių pardavimas",
-                "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas",
-                "Gem Sale": "Brangakmenių pardavimas",
-                "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas",
-                "Other": "Kita" 
-            },
-            expense: { 
-                "Level-up": "Lygio kėlimas", 
-                "Minting": "Mintinimas", 
-                "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", 
-                "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas",
-                "Sneaker Purchase": "Sportbačių pirkimas",
-                "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas",
-                "Gem Purchase": "Brangakmenių pirkimas",
-                "Mystery Box Slot Purchase": "Papildomų 'Mystery Box' vietų pirkimas",
-                "Other": "Kita" 
-            }
+            income: { "GGT Earnings": "GGT uždarbis", "Sneaker Rental": "Sportbačių nuoma", "Sneaker Sale": "Sportbačių pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas", "Other": "Kita" },
+            expense: { "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Sneaker Purchase": "Sportbačių pirkimas", "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", "Gem Purchase": "Brangakmenių pirkimas", "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas", "Mystery Box Slot Purchase": "Papildomų 'Mystery Box' vietų pirkimas", "Other": "Kita" }
         },
         og: {
-            income: { 
-                "GST Earnings": "GST uždarbis", 
-                "Sneaker Sale": "Sportbačio pardavimas", 
-                "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas",
-                "Gem Sale": "Brangakmenių pardavimas",
-                "Scroll Sale": "'Minting Scroll' pardavimas",
-                "Other": "Kita" 
-            },
-            expense: { 
-                "Repair": "Taisymas (HP)",
-                "Level-up": "Lygio kėlimas", 
-                "Mystery Box opening": "Dėžutės atidarymas", 
-                "Restore": "Atributų atkūrimas",
-                "Minting": "Mintinimas", 
-                "Sneaker Purchase": "Sportbačių pirkimas",
-                "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas",
-                "Scroll Purchase": "'Minting Scroll' pirkimas",
-                "Other": "Kita" 
-            }
+            income: { "GST Earnings": "GST uždarbis", "Sneaker Sale": "Sportbačio pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Scroll Sale": "'Minting Scroll' pardavimas", "Other": "Kita" },
+            expense: { "Level-up": "Lygio kėlimas", "Repair": "Taisymas (HP)", "Restore": "Atributų atkūrimas", "Minting": "Mintinimas", "Sneaker Purchase": "Sportbačių pirkimas", "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", "Mystery Box opening": "Dėžutės atidarymas", "Scroll Purchase": "'Minting Scroll' pirkimas", "Other": "Kita" }
         }
     };
-    // === PAKEITIMAS BAIGIASI ČIA ===
 
     const loggerElements = {};
     let currentLogData = []; 
@@ -61,7 +24,7 @@
 
     function initLogger() {
         cacheLoggerElements();
-        updateCategoryFilter();
+        populateCategoryFilter();
         resetLogForm();
         bindLoggerEventListeners();
         loadAndRenderLogTable();
@@ -74,7 +37,7 @@
             'logTokenRadioGroup', 'logTokenAmount', 
             'goLevelUpGgt', 'goLevelUpGmt', 
             'ogLevelUpGst', 'ogLevelUpGmt', 
-            'ogMintGst', 'ogMintGmt', 'ogMintScrolls',
+            'ogMintGst', 'ogMintGmt', 'ogMintScrollsCost',
             'ogRestoreGst', 'ogRestoreGmt', 'ogRestoreGemsGmt',
             'editRateUsd', 'editAmountUsd', 
             'logTableBody', 'summaryContainer', 
@@ -106,12 +69,11 @@
         if (loggerElements.editAmountUsd) loggerElements.editAmountUsd.addEventListener('input', () => syncEditInputs('amount'));
     }
 
-    function updateCategoryFilter() {
+    function populateCategoryFilter() {
         if (!loggerElements.filterCategory) return;
-
-        const platform = loggerElements.platform.value;
-        const allCategories = new Set();
+        
         const reverseCategoryMap = {};
+        const allCategories = new Set();
         
         let categoryOrder = [];
 
@@ -134,8 +96,8 @@
             categoryOrder.push(...expenseKeys.map(k => CATEGORIES[plat].expense[k]));
         };
 
-        if (platform) {
-            processPlatform(platform);
+        if (loggerElements.platform.value) {
+            processPlatform(loggerElements.platform.value);
             loggerElements.filterCategory.disabled = false;
         } else {
             processPlatform('go');
@@ -200,12 +162,12 @@
             if (gmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: gmt });
         } else if (platform === 'og' && category === 'Minting') {
             const gst = parseFloat(loggerElements.ogMintGst.value) || 0;
-            const gmt = parseFloat(loggerElements.ogMintGmt.value) || 0;
-            const scrolls = parseInt(loggerElements.ogMintScrolls.value) || 0;
-            let mintDesc = description;
-            if (scrolls > 0) mintDesc += ` (Panaudota ${scrolls} Minting Scrolls)`;
-            if (gst > 0) operations.push({ ...commonData, description: mintDesc, tokenKey: 'gst', tokenAmount: gst });
-            if (gmt > 0) operations.push({ ...commonData, description: mintDesc, tokenKey: 'gmt', tokenAmount: gmt });
+            const gmtDirect = parseFloat(loggerElements.ogMintGmt.value) || 0;
+            const scrollsCost = parseFloat(loggerElements.ogMintScrollsCost.value) || 0;
+            const totalGmt = gmtDirect + scrollsCost;
+            
+            if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
+            if (totalGmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: totalGmt });
         } else if (platform === 'og' && category === 'Restore') {
             const gst = parseFloat(loggerElements.ogRestoreGst.value) || 0;
             const gmtDirect = parseFloat(loggerElements.ogRestoreGmt.value) || 0;
@@ -359,16 +321,11 @@
         const platform = loggerElements.platform.value;
         const type = loggerElements.logType.value;
         const platformCategories = CATEGORIES[platform]?.[type] || {};
-        
-        // Pakeista: rikiuojame ne pagal abėcėlę, o pagal objekto eiliškumą
         const options = Object.entries(platformCategories);
-
         let optionsHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
         optionsHTML += options.map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
-        
         const currentCategory = loggerElements.logCategory.value;
         loggerElements.logCategory.innerHTML = optionsHTML;
-        
         if (platformCategories[currentCategory]) {
             loggerElements.logCategory.value = currentCategory;
         } else {
@@ -657,4 +614,3 @@
     }
     
 })();
-
