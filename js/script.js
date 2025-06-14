@@ -1,26 +1,27 @@
-// Failas: js/script.js (Atnaujinta su papildomais žetonais)
+// Failas: js/script.js (Versija su dinaminėmis stablecoin kainomis)
 
 (function() {
     'use strict';
-
-window.appData = {
-    tokens: {
-        'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', historyApiId: 'stepn', logo: 'img/gmt.svg' },
-        'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', historyApiId: 'go-game-token', logo: 'img/ggt.svg' },
-        'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', historyApiId: 'green-satoshi-token', logo: 'img/gst.svg' },
-        'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', historyApiId: 'solana', logo: 'img/sol.svg' },
-        'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', historyApiId: 'usd-coin', logo: 'img/usdc.svg', fixedPrice: 1.0 },
-        'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', historyApiId: 'tether', logo: 'img/usdt.svg', fixedPrice: 1.0 },
-        'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'img/btc.svg' },
-        'pol': { key: 'pol', symbol: 'POL', apiId: 'polygon-ecosystem-token', historyApiId: 'polygon-ecosystem-token', logo: 'img/pol.svg' },
-        'bnb': { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', historyApiId: 'binancecoin', logo: 'img/bnb.svg' },
-        'ltc': { key: 'ltc', symbol: 'LTC', apiId: 'litecoin', historyApiId: 'litecoin', logo: 'img/ltc.svg' },
-        'kas': { key: 'kas', symbol: 'KAS', apiId: 'kaspa', historyApiId: 'kaspa', logo: 'img/kaspa.svg' },
-        'xlm': { key: 'xlm', symbol: 'XLM', apiId: 'stellar', historyApiId: 'stellar', logo: 'img/xlm.svg' },
-        'ada': { key: 'ada', symbol: 'ADA', apiId: 'cardano', historyApiId: 'cardano', logo: 'img/cardano.svg' },
-        'ton': { key: 'ton', symbol: 'TON', apiId: 'the-open-network', historyApiId: 'the-open-network', logo: 'img/ton.svg' },
-        'cro': { key: 'cro', symbol: 'CRO', apiId: 'crypto-com-chain', historyApiId: 'crypto-com-chain', logo: 'img/cro.svg' }
-    },
+    
+    window.appData = {
+        tokens: {
+            'usd': { key: 'usd', symbol: 'USD', apiId: null, historyApiId: null, logo: 'img/usd.svg', fixedPrice: 1.0 },
+            'gmt': { key: 'gmt', symbol: 'GMT', apiId: 'stepn', historyApiId: 'stepn', logo: 'img/gmt.svg' },
+            'ggt': { key: 'ggt', symbol: 'GGT', apiId: 'go-game-token', historyApiId: 'go-game-token', logo: 'img/ggt.svg' },
+            'gst': { key: 'gst', symbol: 'GST (SOL)', apiId: 'green-satoshi-token', historyApiId: 'green-satoshi-token', logo: 'img/gst.svg' },
+            'sol': { key: 'sol', symbol: 'SOL', apiId: 'solana', historyApiId: 'solana', logo: 'img/sol.svg' },
+            'usdc': { key: 'usdc', symbol: 'USDC', apiId: 'usd-coin', historyApiId: 'usd-coin', logo: 'img/usdc.svg' },
+            'usdt': { key: 'usdt', symbol: 'USDT', apiId: 'tether', historyApiId: 'tether', logo: 'img/usdt.svg' },
+            'btc': { key: 'btc', symbol: 'BTC', apiId: 'bitcoin', historyApiId: 'bitcoin', logo: 'img/btc.svg' },
+            'pol': { key: 'pol', symbol: 'POL', apiId: 'polygon-ecosystem-token', historyApiId: 'polygon-ecosystem-token', logo: 'img/pol.svg' },
+            'bnb': { key: 'bnb', symbol: 'BNB', apiId: 'binancecoin', historyApiId: 'binancecoin', logo: 'img/bnb.svg' },
+            'ltc': { key: 'ltc', symbol: 'LTC', apiId: 'litecoin', historyApiId: 'litecoin', logo: 'img/ltc.svg' },
+            'kas': { key: 'kas', symbol: 'KAS', apiId: 'kaspa', historyApiId: 'kaspa', logo: 'img/kaspa.svg' },
+            'xlm': { key: 'xlm', symbol: 'XLM', apiId: 'stellar', historyApiId: 'stellar', logo: 'img/xlm.svg' },
+            'ada': { key: 'ada', symbol: 'ADA', apiId: 'cardano', historyApiId: 'cardano', logo: 'img/cardano.svg' },
+            'ton': { key: 'ton', symbol: 'TON', apiId: 'the-open-network', historyApiId: 'the-open-network', logo: 'img/ton.svg' },
+            'cro': { key: 'cro', symbol: 'CRO', apiId: 'crypto-com-chain', historyApiId: 'crypto-com-chain', logo: 'img/cro.svg' }
+        },
         prices: {},
         initialized: false,
         converterInitialized: false
@@ -32,43 +33,38 @@ window.appData = {
 
     async function init() {
         try {
-            console.log('Starting app initialization...');
-            
             const loggerBtn = document.getElementById('tab-btn-logger');
             const converterBtn = document.getElementById('tab-btn-converter');
             
             if (loggerBtn) loggerBtn.addEventListener('click', () => switchTab('logger'));
             if (converterBtn) converterBtn.addEventListener('click', () => switchTab('converter'));
             
-            console.log('Fetching initial prices...');
             await fetchLiveTokenPrices(true);
             
             window.appData.initialized = true;
-            console.log('App data initialized, prices:', window.appData.prices);
 
             if (typeof window.appActions.initLogger === 'function') {
-                console.log('Initializing logger...');
                 await window.appActions.initLogger();
             }
             
             if (typeof window.appActions.initConverter === 'function') {
-                console.log('Initializing converter...');
                 await window.appActions.initConverter();
                 window.appData.converterInitialized = true;
             }
             
             switchTab('logger');
             
-            console.log('App initialized successfully');
         } catch (error) {
             console.error('Error during initialization:', error);
         }
     }
 
     async function fetchLiveTokenPrices(fetchAll = false, singleApiId = null) {
-        let tokenApiIds;
-        if(fetchAll) { 
-            tokenApiIds = Object.values(window.appData.tokens).map(t => t.apiId).filter(id => id);
+        let tokenApiIds = [];
+        if (fetchAll) { 
+            tokenApiIds = Object.values(window.appData.tokens)
+                .map(t => t.apiId)
+                .filter(id => id);
         } else if (singleApiId) { 
             tokenApiIds = [singleApiId]; 
         } else { 
@@ -84,17 +80,11 @@ window.appData = {
             
             const data = await response.json();
             
-            window.appData.prices['usd'] = { price: 1, change: 0 };
-            
             for (const apiId in data) { 
                 window.appData.prices[apiId] = { 
                     price: data[apiId].usd, 
                     change: data[apiId].usd_24h_change || 0 
                 }; 
-            }
-            
-            if (window.appData.prices['usd-coin']) {
-                window.appData.prices['usd-coin'] = { price: 1.0, change: 0 };
             }
             
             if (window.appData.initialized && 
@@ -149,13 +139,8 @@ window.appData = {
     }
 
     function switchTab(tabName) {
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        
-        document.querySelectorAll('.tab-button').forEach(btn => {
-            btn.classList.remove('active');
-        });
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
         
         const targetContent = document.getElementById(`tab-content-${tabName}`);
         const targetButton = document.getElementById(`tab-btn-${tabName}`);
@@ -173,13 +158,5 @@ window.appData = {
     
     document.addEventListener('DOMContentLoaded', init);
     
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        window.appDebug = {
-            data: () => window.appData,
-            actions: () => window.appActions,
-            reinit: init,
-            fetchPrices: () => fetchLiveTokenPrices(true)
-        };
-    }
 })();
 
