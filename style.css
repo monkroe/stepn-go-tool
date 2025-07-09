@@ -277,3 +277,15 @@ td:nth-child(2) {
     color: #4b5563; /* Pilka spalva */
     line-height: 1.2;
 }
+/* === Mėnesio skirtuko stilius === */
+.month-separator-row td {
+    background-color: #111827; /* Tamsesnis fonas, kad išsiskirtų */
+    color: #cbd5e0;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    padding-top: 1.5rem; /* Didesnis tarpas iš viršaus */
+    padding-bottom: 0.5rem;
+    border-top: 3px solid #4f46e5; /* Ryškus viršutinis rėmelis */
+    border-bottom: none; /* Nuimame apatinį rėmelį */
+}
