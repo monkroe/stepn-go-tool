@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Versija su mėnesių grupavimu)
+// Failas: js/logger.js (Versija V1.0.10 - su mėnesio suvestinėmis)
 
 (function() {
     'use strict';
@@ -441,25 +441,29 @@
         }
     }
 
-    function groupTransactionsByDate(transactions) {
-        return transactions.reduce((acc, entry) => {
-            const date = entry.date;
-            if (!acc[date]) {
-                acc[date] = {
-                    transactions: [],
-                    dailyIncome: 0,
-                    dailyExpense: 0
-                };
+    function groupDataByMonthAndDay(transactions) {
+        const monthlyData = {};
+        transactions.forEach(entry => {
+            const date = new Date(entry.date + 'T00:00:00');
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const dayKey = entry.date;
+            if (!monthlyData[monthKey]) {
+                monthlyData[monthKey] = { days: {}, monthlyIncome: 0, monthlyExpense: 0 };
+            }
+            if (!monthlyData[monthKey].days[dayKey]) {
+                monthlyData[monthKey].days[dayKey] = { transactions: [], dailyIncome: 0, dailyExpense: 0 };
             }
             const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
             if (entry.type === 'income') {
-                acc[date].dailyIncome += amount_usd;
+                monthlyData[monthKey].monthlyIncome += amount_usd;
+                monthlyData[monthKey].days[dayKey].dailyIncome += amount_usd;
             } else {
-                acc[date].dailyExpense += amount_usd;
+                monthlyData[monthKey].monthlyExpense += amount_usd;
+                monthlyData[monthKey].days[dayKey].dailyExpense += amount_usd;
             }
-            acc[date].transactions.push(entry);
-            return acc;
-        }, {});
+            monthlyData[monthKey].days[dayKey].transactions.push(entry);
+        });
+        return monthlyData;
     }
 
     function renderLogTable(data) {
@@ -472,80 +476,90 @@
             return;
         }
 
-        const groupedData = groupTransactionsByDate(data);
-        const dates = Object.keys(groupedData);
+        const groupedData = groupDataByMonthAndDay(data);
+        const months = Object.keys(groupedData).sort().reverse();
         let totalIncomeUSD = 0, totalExpenseUSD = 0;
         const tokenBalances = {};
         let finalHTML = '';
-        let lastMonth = null;
 
-        dates.forEach(date => {
-            const group = groupedData[date];
-            const currentDate = new Date(date + 'T00:00:00');
-            const currentMonth = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
-
-            if (currentMonth !== lastMonth) {
-                lastMonth = currentMonth;
-                const monthName = currentDate.toLocaleDateString('lt-LT', { month: 'long', year: 'numeric' });
-                finalHTML += `
-                    <tr class="month-separator-row">
-                        <td colspan="8">${monthName.toUpperCase()}</td>
-                    </tr>
-                `;
-            }
-
-            const dailyNet = group.dailyIncome - group.dailyExpense;
-            const netColorClass = dailyNet >= 0 ? 'income-color' : 'expense-color';
-            const netSign = dailyNet >= 0 ? '+' : '';
+        months.forEach(monthKey => {
+            const monthData = groupedData[monthKey];
+            const monthDate = new Date(monthKey + '-01T00:00:00');
+            const monthName = monthDate.toLocaleDateString('lt-LT', { month: 'long', year: 'numeric' });
+            const monthlyNet = monthData.monthlyIncome - monthData.monthlyExpense;
+            const monthlyNetColor = monthlyNet >= 0 ? 'income-color' : 'expense-color';
+            const monthlyNetSign = monthlyNet >= 0 ? '+' : '';
 
             finalHTML += `
-                <tr class="date-separator-row" data-date-group="${date}">
+                <tr class="month-separator-row">
                     <td colspan="8">
                         <div class="date-separator-content">
-                            <span class="date-display">
-                                <span class="toggle-arrow">▸</span>
-                                ${currentDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                            </span>
-                            <span class="daily-summary">
-                                <span class="daily-income">+${group.dailyIncome.toFixed(2)}</span>
-                                <span class="daily-expense">-${group.dailyExpense.toFixed(2)}</span>
-                                <span class="daily-net ${netColorClass}">${netSign}${dailyNet.toFixed(2)}</span>
+                            <span>${monthName.toUpperCase()}</span>
+                            <span class="monthly-summary">
+                                <span class="daily-income">+${monthData.monthlyIncome.toFixed(2)}</span>
+                                <span class="daily-expense">-${monthData.monthlyExpense.toFixed(2)}</span>
+                                <span class="daily-net ${monthlyNetColor}">${monthlyNetSign}${monthlyNet.toFixed(2)}</span>
                             </span>
                         </div>
                     </td>
                 </tr>
             `;
+            
+            const days = Object.keys(monthData.days).sort().reverse();
 
-            group.transactions.forEach(entry => {
-                const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
-                const isIncome = entry.type === 'income';
-
-                totalIncomeUSD += isIncome ? amount_usd : 0;
-                totalExpenseUSD += !isIncome ? amount_usd : 0;
-                
-                if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
-                tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
-
-                const tokenSymbol = (window.appData.tokens[entry.token]?.symbol || entry.token.toUpperCase()).replace(' (SOL)', '');
-                const iconPath = `img/${entry.token.toLowerCase()}.svg`;
-                const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
-                const arrow = isIncome ? '▲' : '▼';
+            days.forEach(dayKey => {
+                const dayData = monthData.days[dayKey];
+                const displayDate = new Date(dayKey + 'T00:00:00');
+                const dailyNet = dayData.dailyIncome - dayData.dailyExpense;
+                const netColorClass = dailyNet >= 0 ? 'income-color' : 'expense-color';
+                const netSign = dailyNet >= 0 ? '+' : '';
 
                 finalHTML += `
-                    <tr class="transaction-row hidden" data-id="${entry.id}" data-date-group="${date}">
-                        <td class="align-middle">${entry.date}</td>
-                        <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
-                        <td class="token-cell align-middle">${tokenCellHTML}</td>
-                        <td class="align-middle">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
-                        <td class="align-middle">$${(entry.rate_usd || 0).toFixed(5)}</td>
-                        <td class="align-middle">$${amount_usd.toFixed(2)}</td>
-                        <td class="align-middle">${entry.description || ''}</td>
-                        <td class="log-table-actions align-middle">
-                            <button class="btn-edit">Taisyti</button>
-                            <button class="btn-delete">Trinti</button>
+                    <tr class="date-separator-row" data-date-group="${dayKey}">
+                        <td colspan="8">
+                            <div class="date-separator-content">
+                                <span class="date-display">
+                                    <span class="toggle-arrow">▸</span>
+                                    ${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                </span>
+                                <span class="daily-summary">
+                                    <span class="daily-income">+${dayData.dailyIncome.toFixed(2)}</span>
+                                    <span class="daily-expense">-${dayData.dailyExpense.toFixed(2)}</span>
+                                    <span class="daily-net ${netColorClass}">${netSign}${dailyNet.toFixed(2)}</span>
+                                </span>
+                            </div>
                         </td>
                     </tr>
                 `;
+
+                dayData.transactions.forEach(entry => {
+                    const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
+                    const isIncome = entry.type === 'income';
+                    totalIncomeUSD += isIncome ? amount_usd : 0;
+                    totalExpenseUSD += !isIncome ? amount_usd : 0;
+                    if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
+                    tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
+                    const tokenSymbol = (window.appData.tokens[entry.token]?.symbol || entry.token.toUpperCase()).replace(' (SOL)', '');
+                    const iconPath = `img/${entry.token.toLowerCase()}.svg`;
+                    const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
+                    const arrow = isIncome ? '▲' : '▼';
+
+                    finalHTML += `
+                        <tr class="transaction-row hidden" data-id="${entry.id}" data-date-group="${dayKey}">
+                            <td class="align-middle">${entry.date}</td>
+                            <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
+                            <td class="token-cell align-middle">${tokenCellHTML}</td>
+                            <td class="align-middle">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+                            <td class="align-middle">$${(entry.rate_usd || 0).toFixed(5)}</td>
+                            <td class="align-middle">$${amount_usd.toFixed(2)}</td>
+                            <td class="align-middle">${entry.description || ''}</td>
+                            <td class="log-table-actions align-middle">
+                                <button class="btn-edit">Taisyti</button>
+                                <button class="btn-delete">Trinti</button>
+                            </td>
+                        </tr>
+                    `;
+                });
             });
         });
         
@@ -627,4 +641,3 @@
     }
     
 })();
-
