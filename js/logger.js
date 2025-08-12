@@ -1,18 +1,31 @@
-// Failas: js/logger.js (Versija V1.0.10 - su mėnesio suvestinėmis)
+// Failas: js/logger.js (Versija su "Socket" atidarymo kategorija)
 
 (function() {
     'use strict';
     
+    // === PAKEITIMAS PRASIDEDA ČIA ===
     const CATEGORIES = {
         go: {
             income: { "GGT Earnings": "GGT uždarbis", "Sneaker Rental": "Sportbačių nuoma", "Sneaker Sale": "Sportbačių pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas", "Other": "Kita" },
-            expense: { "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas", "Sneaker Purchase": "Sportbačių pirkimas", "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", "Gem Purchase": "Brangakmenių pirkimas", "Mystery Box Slot Purchase": "Papildomų 'Mystery Box' vietų pirkimas", "Other": "Kita" }
+            expense: { 
+                "Level-up": "Lygio kėlimas", 
+                "Minting": "Mintinimas",
+                "Socket Unlock": "Socket atidarymas", // NAUJA KATEGORIJA
+                "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", 
+                "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas", 
+                "Sneaker Purchase": "Sportbačių pirkimas", 
+                "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", 
+                "Gem Purchase": "Brangakmenių pirkimas", 
+                "Mystery Box Slot Purchase": "Papildomų 'Mystery Box' vietų pirkimas", 
+                "Other": "Kita" 
+            }
         },
         og: {
             income: { "GST Earnings": "GST uždarbis", "Sneaker Sale": "Sportbačio pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Scroll Sale": "'Minting Scroll' pardavimas", "Other": "Kita" },
             expense: { "Repair": "Taisymas (HP)", "Level-up": "Lygio kėlimas", "Mystery Box opening": "Dėžutės atidarymas", "Restore": "Atributų atkūrimas", "Minting": "Mintinimas", "Sneaker Purchase": "Sportbačių pirkimas", "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", "Scroll Purchase": "'Minting Scroll' pirkimas", "Other": "Kita" }
         }
     };
+    // === PAKEITIMAS BAIGIASI ČIA ===
 
     const loggerElements = {};
     let currentLogData = []; 
@@ -367,7 +380,12 @@
             loggerElements.standardFields.classList.remove('hidden');
             let tokensForPlatform = ['gmt', 'sol', 'usdc'];
             if (platform === 'go') {
-                tokensForPlatform = ['ggt', 'gmt', 'usdc'];
+                // "Socket Unlock" kategorijai automatiškai parenkame GGT
+                if (category === 'Socket Unlock') {
+                    tokensForPlatform = ['ggt'];
+                } else {
+                    tokensForPlatform = ['ggt', 'gmt', 'usdc'];
+                }
             } else if (platform === 'og') {
                 tokensForPlatform = ['gst', 'gmt', 'sol', 'usdc'];
             }
@@ -641,3 +659,4 @@
     }
     
 })();
+
