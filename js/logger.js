@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Versija su "Socket" atidarymo kategorija)
+// Failas: js/logger.js (Versija V1.1.2 - Pridėta "Gem Removal" kategorija)
 
 (function() {
     'use strict';
@@ -9,8 +9,9 @@
             income: { "GGT Earnings": "GGT uždarbis", "Sneaker Rental": "Sportbačių nuoma", "Sneaker Sale": "Sportbačių pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas", "Other": "Kita" },
             expense: { 
                 "Level-up": "Lygio kėlimas", 
-                "Minting": "Mintinimas",
-                "Socket Unlock": "Socket atidarymas", // NAUJA KATEGORIJA
+                "Minting": "Mintinimas", 
+                "Socket Unlock": "Socket atidarymas",
+                "Gem Removal": "Brangakmenio išėmimas", // NAUJA KATEGORIJA
                 "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", 
                 "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas", 
                 "Sneaker Purchase": "Sportbačių pirkimas", 
@@ -347,6 +348,7 @@
         loggerElements.logCategory.disabled = Object.keys(platformCategories).length === 0;
     }
 
+    // === PAKEITIMAS PRASIDEDA ČIA ===
     function updateVisibleFields() {
         if (!loggerElements.platform || !loggerElements.logCategory) return;
         const platform = loggerElements.platform.value;
@@ -376,22 +378,22 @@
             updateTokenRadioButtons(['gst']);
         } else if (platform === 'og' && category === 'Restore') {
             loggerElements.ogRestoreFields.classList.remove('hidden');
+        } else if (platform === 'go' && (category === 'Socket Unlock' || category === 'Gem Removal')) {
+            // Sujungiame dvi GGT išlaidų kategorijas
+            loggerElements.standardFields.classList.remove('hidden');
+            updateTokenRadioButtons(['ggt']);
         } else if (category) {
             loggerElements.standardFields.classList.remove('hidden');
             let tokensForPlatform = ['gmt', 'sol', 'usdc'];
             if (platform === 'go') {
-                // "Socket Unlock" kategorijai automatiškai parenkame GGT
-                if (category === 'Socket Unlock') {
-                    tokensForPlatform = ['ggt'];
-                } else {
-                    tokensForPlatform = ['ggt', 'gmt', 'usdc'];
-                }
+                tokensForPlatform = ['ggt', 'gmt', 'usdc'];
             } else if (platform === 'og') {
                 tokensForPlatform = ['gst', 'gmt', 'sol', 'usdc'];
             }
             updateTokenRadioButtons(tokensForPlatform);
         }
     }
+    // === PAKEITIMAS BAIGIASI ČIA ===
 
     function updateTokenRadioButtons(tokensToShow) {
         if (!loggerElements.logTokenRadioGroup) return;
@@ -659,4 +661,3 @@
     }
     
 })();
-
