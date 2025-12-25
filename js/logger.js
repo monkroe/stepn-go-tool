@@ -1,8 +1,11 @@
-// Failas: js/logger.js (Galutinė versija su visomis funkcijomis)
+// Failas: js/logger.js (Galutinė versija V1.0.11 - Pataisyta ir Optimizuota)
 
 (function() {
     'use strict';
     
+    // Naudojame globalų supabase objektą
+    const supabase = window.supabase;
+
     const CATEGORIES = {
         go: {
             income: { "GGT Earnings": "GGT Uždarbis", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
@@ -26,7 +29,8 @@
         cacheLoggerElements();
         resetLogForm();
         bindLoggerEventListeners();
-        loadAndRenderLogTable();
+        // Įsitikiname, kad vartotojas prisijungęs prieš kraunant duomenis
+        setTimeout(loadAndRenderLogTable, 500); 
     }
 
     function cacheLoggerElements() {
@@ -284,7 +288,9 @@
         });
         const currentValue = loggerElements.filterToken.value;
         loggerElements.filterToken.innerHTML = optionsHTML;
-        loggerElements.filterToken.value = currentValue;
+        if (uniqueTokens.includes(currentValue)) {
+            loggerElements.filterToken.value = currentValue;
+        }
     }
 
     function groupTransactionsByDate(transactions) {
@@ -319,7 +325,7 @@
         }
 
         const groupedData = groupTransactionsByDate(data);
-        const dates = Object.keys(groupedData);
+        const dates = Object.keys(groupedData).sort().reverse(); // Sort dates descending
 
         let totalIncomeUSD = 0, totalExpenseUSD = 0;
         const tokenBalances = {};
@@ -408,9 +414,7 @@
                 alert('Nėra duomenų, kuriuos būtų galima eksportuoti.');
                 return;
             }
-
             const headers = [ "Data", "Platforma", "Tipas", "Kategorija", "Žetonas", "Kiekis", "Kursas (USD)", "Suma (USD)", "Aprašymas" ];
-
             const rows = currentLogData.map(entry => {
                 const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
                 return [
@@ -425,17 +429,14 @@
                     entry.description || ''
                 ].map(field => String(field)); 
             });
-
             const csvContent = [
                 headers.join(','),
                 ...rows.map(row => row.map(escapeCsvField).join(','))
             ].join('\n');
-
             downloadCsv(csvContent);
-
         } catch (error) {
             console.error("Įvyko klaida eksportuojant CSV:", error);
-            alert(`Eksportavimo klaida: ${error.message}\n\nPrašome patikrinti F12 konsolę detalesnei informacijai.`);
+            alert(`Eksportavimo klaida: ${error.message}`);
         }
     }
 
@@ -463,4 +464,3 @@
     }
     
 })();
-
