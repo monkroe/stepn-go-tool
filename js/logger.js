@@ -1,21 +1,12 @@
-// Failas: js/logger.js (V1.1.2 - Originali logika, pataisytas kintamojo gavimas)
+// Failas: js/logger.js (Versija V1.1.2 - FIX)
 
 (function() {
     'use strict';
     
-    // === PATAISYMAS: Saugiai gauname globalų Supabase kintamąjį ===
-    // Mes nekuriam naujo kliento, o ieškome to, kurį sukūrė js/supabase.js
-    let sb = null;
-    
-    function getSupabase() {
-        if (sb) return sb;
-        // Bandome įvairius variantus, kur gali slėptis klientas
-        if (typeof supabase !== 'undefined') return supabase;
-        if (window.supabaseClient) return window.supabaseClient;
-        if (window.supabase && window.supabase.auth) return window.supabase;
-        return null;
-    }
-    // ==============================================================
+    // === PATAISYMAS ===
+    // Čia nebeapibrėžiame 'supabase' iš naujo.
+    // Kodas automatiškai naudos globalų 'supabase' kintamąjį iš js/supabase.js failo.
+    // Tai išspręs "reading 'getUser'" klaidą.
 
     const CATEGORIES = {
         go: {
@@ -50,12 +41,15 @@
 
     function initLogger() {
         cacheLoggerElements();
-        // Palaukiame, kol visi failai (įskaitant supabase.js) užsikraus
+        // Palaukiame šiek tiek, kad užtikrintume, jog globalus 'supabase' kintamasis jau sukurtas
         setTimeout(() => {
-            sb = getSupabase(); // Bandome gauti klientą
-            if (!sb) {
-                console.error("Supabase nerastas! Patikrinkite, ar js/supabase.js užkrautas.");
+            // Papildomas patikrinimas debugginimui
+            if (typeof supabase === 'undefined') {
+                console.error("KLAIDA: 'supabase' kintamasis nerastas. Patikrinkite, ar js/supabase.js užkrautas prieš js/logger.js");
+                alert("Klaida: Nepavyko prisijungti prie duomenų bazės. Patikrinkite konsolę (F12).");
+                return;
             }
+            
             populateCategoryFilter();
             resetLogForm();
             bindLoggerEventListeners();
@@ -108,6 +102,8 @@
         const reverseCategoryMap = {};
         const allCategories = new Set();
         
+        let categoryOrder = [];
+
         const collectCats = (plat) => {
             if (!CATEGORIES[plat]) return;
             ['income', 'expense'].forEach(type => {
@@ -220,11 +216,9 @@
     }
 
     async function createSingleLogEntry(entryData) {
-        sb = getSupabase(); // Užtikriname, kad turime klientą
-        if (!sb) throw new Error("Supabase klientas nerastas. Perkraukite puslapį.");
-
-        const { data: { user } } = await sb.auth.getUser();
-        if (!user) throw new Error("Vartotojas neprisijungęs. Perkraukite puslapį ir prisijunkite iš naujo.");
+        // Čia naudojame globalų 'supabase', kuris jau turi būti inicializuotas
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Vartotojas neprisijungęs. Perkraukite puslapį.");
         
         if (loggerElements.logSubmitBtn) {
             loggerElements.logSubmitBtn.textContent = `Išsaugoma ${entryData.tokenKey.toUpperCase()}...`;
@@ -250,12 +244,11 @@
         delete record.tokenKey;
         delete record.tokenAmount;
         
-        const { error } = await sb.from('transactions').insert(record);
+        const { error } = await supabase.from('transactions').insert(record);
         if (error) throw error;
     }
 
     async function handleUpdate(id) {
-        sb = getSupabase();
         const record = {
             date: loggerElements.logDate.value,
             type: loggerElements.logType.value,
@@ -273,7 +266,7 @@
                 record.rate_usd = await window.appActions.getPriceForDate(record.token, record.date);
             }
         }
-        const { error } = await sb.from('transactions').update(record).eq('id', id);
+        const { error } = await supabase.from('transactions').update(record).eq('id', id);
         if (error) throw error;
     }
 
@@ -290,16 +283,15 @@
             const row = actionButton.closest('tr');
             if (!row || !row.dataset.id) return;
             const entryId = parseInt(row.dataset.id);
-            sb = getSupabase();
 
             if (actionButton.matches('.btn-delete')) {
                 if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
-                    const { error } = await sb.from('transactions').delete().eq('id', entryId);
+                    const { error } = await supabase.from('transactions').delete().eq('id', entryId);
                     if (error) alert(`Klaida trinant: ${error.message}`);
                     else await loadAndRenderLogTable();
                 }
             } else if (actionButton.matches('.btn-edit')) {
-                const { data, error } = await sb.from('transactions').select().eq('id', entryId).single();
+                const { data, error } = await supabase.from('transactions').select().eq('id', entryId).single();
                 if (error) { alert(`Klaida gaunant įrašą: ${error.message}`); return; }
                 startEditEntry(data);
             }
@@ -457,17 +449,16 @@
     }
     
     async function loadAndRenderLogTable() {
-        sb = getSupabase();
-        if (!sb) return;
+        if (typeof supabase === 'undefined') return;
 
-        const { data: { user } } = await sb.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
             currentLogData = [];
             renderLogTable(currentLogData);
             populateFilterDropdowns(currentLogData);
             return;
         }
-        let query = sb.from('transactions').select('*').eq('user_id', user.id);
+        let query = supabase.from('transactions').select('*').eq('user_id', user.id);
         
         if (loggerElements.filterStartDate.value) query = query.gte('date', loggerElements.filterStartDate.value);
         if (loggerElements.filterEndDate.value) query = query.lte('date', loggerElements.filterEndDate.value);
