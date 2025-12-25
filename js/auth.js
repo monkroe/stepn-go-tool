@@ -1,4 +1,4 @@
-// Failas: auth.js (Galutinė pataisyta versija)
+// Failas: auth.js (SAUGI VERSIJA)
 
 const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
@@ -12,6 +12,7 @@ async function handleOAuthCallback() {
     if (error) {
       console.error('OAuth klaida:', error);
       alert('Prisijungimo klaida. Bandykite dar kartą.');
+      return;
     }
     
     // Išvalyti URL nuo hash parametrų
@@ -33,17 +34,24 @@ handleOAuthCallback();
 // Patikriname sesiją
 supabase.auth.getSession().then(({ data: { session } }) => {
   updateAuthUI(session);
-  // Įkelti transakcijas jei prisijungęs
+  // Įkelti transakcijas tik jei prisijungęs
   if (session && window.appActions && window.appActions.loadAndRenderLogTable) {
     window.appActions.loadAndRenderLogTable();
+  } else {
+    // KRITINIS PATAISYMAS: Valyti lentelę jei neprisijungęs
+    clearTableWhenLoggedOut();
   }
 });
 
 // Klausomės būsenos pasikeitimų
 supabase.auth.onAuthStateChange((_event, session) => {
   updateAuthUI(session);
-  // Perkrauti transakcijas kai būsena pasikeičia
-  if (session && window.appActions && window.appActions.loadAndRenderLogTable) {
+  
+  if (_event === 'SIGNED_OUT') {
+    // Valyti duomenis po atsijungimo
+    clearTableWhenLoggedOut();
+  } else if (session && window.appActions && window.appActions.loadAndRenderLogTable) {
+    // Perkrauti transakcijas tik jei prisijungęs
     window.appActions.loadAndRenderLogTable();
   }
 });
@@ -66,6 +74,10 @@ loginBtn.addEventListener('click', async () => {
 // Atsijungimo mygtuko veiksmas
 logoutBtn.addEventListener('click', async () => {
   await supabase.auth.signOut();
+  // Valyti duomenis iš atminties
+  if (window.appActions && window.appActions.renderLogTable) {
+    window.appActions.renderLogTable([]);
+  }
   window.location.reload();
 });
 
@@ -79,5 +91,18 @@ function updateAuthUI(session) {
     loginBtn.classList.remove('hidden');
     logoutBtn.classList.add('hidden');
     userEmail.textContent = '';
+  }
+}
+
+// NAUJA FUNKCIJA: Valyti lentelę kai neprisijungęs
+function clearTableWhenLoggedOut() {
+  const logTableBody = document.getElementById('logTableBody');
+  if (logTableBody) {
+    logTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-400">Prisijunkite, kad matytumėte savo transakcijas.</td></tr>';
+  }
+  
+  const summaryContainer = document.getElementById('summaryContainer');
+  if (summaryContainer) {
+    summaryContainer.innerHTML = '';
   }
 }
