@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Versija V1.1.12 - FINAL: Viskas veikia + Suskleista pagal nutylėjimą)
+// Failas: js/logger.js (Versija V1.2.0 - RLS: Privatus režimas)
 
 (function() {
     'use strict';
@@ -25,7 +25,7 @@
             expense: { 
                 "Level-up": "Lygio kėlimas", 
                 "Minting": "Mintinimas", 
-                "Socket Unlock": "Socket atidarymas",
+                "Socket Unlock": "Socket atidarymas", 
                 "Gem Removal": "Brangakmenio išėmimas", 
                 "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", 
                 "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas", 
@@ -56,7 +56,8 @@
         populateCategoryFilter();
         resetLogForm();
         bindLoggerEventListeners();
-        setTimeout(() => { loadAndRenderLogTable(); }, 300);
+        // Palaukiame šiek tiek, kad Supabase spėtų inicijuotis
+        setTimeout(() => { loadAndRenderLogTable(); }, 500);
     }
 
     function cacheLoggerElements() {
@@ -207,28 +208,63 @@
         }
     }
 
-    // === 6. DUOMENŲ LOGIKA ===
+    // === 6. DUOMENŲ LOGIKA (PATAISYTA PAGAL INSTRUKCIJAS) ===
+    
     async function loadAndRenderLogTable() {
         const sb = getSupabase();
-        if (!sb || !sb.from) { console.warn("Supabase klientas nerastas."); return; }
+        if (!sb || !sb.from) { 
+            console.warn("Supabase klientas nerastas."); 
+            return; 
+        }
 
-        let query = sb.from('transactions').select('*');
+        // KRITINIS PATAISYMAS: Tikrinti autentifikaciją
+        const { data: { user } } = await sb.auth.getUser();
         
-        if (loggerElements.filterStartDate.value) query = query.gte('date', loggerElements.filterStartDate.value);
-        if (loggerElements.filterEndDate.value) query = query.lte('date', loggerElements.filterEndDate.value);
-        if (loggerElements.filterToken.value) query = query.eq('token', loggerElements.filterToken.value);
-        if (loggerElements.filterCategory.value) query = query.eq('category', loggerElements.filterCategory.value);
+        if (!user) {
+            console.log('⚠️ Vartotojas neprisijungęs - rodoma tuščia lentelė');
+            currentLogData = [];
+            renderLogTable(currentLogData);
+            populateFilterDropdowns(currentLogData);
+            return;
+        }
+
+        console.log('✅ Prisijungęs vartotojas:', user.email, 'ID:', user.id);
+
+        // KRITINIS PATAISYMAS: Pridėti user_id filtrą
+        let query = sb.from('transactions').select('*').eq('user_id', user.id);
         
-        query = query.order(loggerElements.filterSort.value, { ascending: loggerElements.filterOrder.value === 'asc' }).order('id', { ascending: false });
+        if (loggerElements.filterStartDate && loggerElements.filterStartDate.value) {
+            query = query.gte('date', loggerElements.filterStartDate.value);
+        }
+        if (loggerElements.filterEndDate && loggerElements.filterEndDate.value) {
+            query = query.lte('date', loggerElements.filterEndDate.value);
+        }
+        if (loggerElements.filterToken && loggerElements.filterToken.value) {
+            query = query.eq('token', loggerElements.filterToken.value);
+        }
+        if (loggerElements.filterCategory && loggerElements.filterCategory.value) {
+            query = query.eq('category', loggerElements.filterCategory.value);
+        }
+        
+        query = query.order(loggerElements.filterSort.value, { 
+            ascending: loggerElements.filterOrder.value === 'asc' 
+        }).order('id', { ascending: false });
         
         const { data, error } = await query;
-        if (error) { console.error('DB Error:', error); return; }
+        
+        if (error) { 
+            console.error('❌ Klaida gaunant duomenis:', error); 
+            alert(`Klaida: ${error.message}`);
+            return; 
+        }
+        
+        console.log(`📊 Rasta ${data ? data.length : 0} transakcijų vartotojui ${user.email}`);
         
         currentLogData = data || [];
         renderLogTable(currentLogData);
         populateFilterDropdowns(currentLogData);
     }
-    
+
     function populateFilterDropdowns(data) {
         if (!loggerElements.filterToken) return;
         const uniqueTokens = [...new Set(data.map(item => item.token))];
@@ -293,7 +329,6 @@
                 const dColor = dailyNet >= 0 ? 'income-color' : 'expense-color';
                 const dSign = dailyNet >= 0 ? '+' : '';
 
-                // ČIA PAKEITIMAS: Nuimtas 'expanded', pakeista rodyklė į '▸'
                 html += `<tr class="date-separator-row" data-date-group="${dayKey}"><td colspan="8"><div class="date-separator-content"><span class="date-display"><span class="toggle-arrow">▸</span> ${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span><span class="daily-summary"><span class="daily-income">+${dData.dailyIncome.toFixed(2)}</span><span class="daily-expense">-${dData.dailyExpense.toFixed(2)}</span><span class="daily-net ${dColor}">${dSign}${dailyNet.toFixed(2)}</span></span></div></td></tr>`;
 
                 dData.transactions.forEach(entry => {
@@ -308,7 +343,6 @@
                     const iconPath = `img/${entry.token.toLowerCase()}.svg`;
                     const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
 
-                    // ČIA PAKEITIMAS: Pridėtas 'hidden'
                     html += `<tr class="transaction-row hidden" data-id="${entry.id}" data-date-group="${dayKey}"><td class="align-middle text-sm text-gray-400">${entry.date}</td><td class="arrow-cell align-middle ${isInc ? 'income-color' : 'expense-color'} font-bold text-center">${isInc ? '▲' : '▼'}</td><td class="token-cell align-middle">${tokenCellHTML} <span class="ml-1">${tokenSymbol}</span></td><td class="align-middle font-mono ${isInc ? 'income-color' : 'expense-color'}">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}</td><td class="align-middle text-gray-400">$${(entry.rate_usd || 0).toFixed(4)}</td><td class="align-middle font-bold">$${usd.toFixed(2)}</td><td class="align-middle text-sm text-gray-300">${entry.description || ''}</td><td class="log-table-actions align-middle"><button class="btn-edit">Taisyti</button><button class="btn-delete">Trinti</button></td></tr>`;
                 });
             });
@@ -338,6 +372,7 @@
         loggerElements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2 text-white">Bendra suvestinė</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
     }
 
+    // === 7. VEIKSMAI (CREATE, UPDATE, DELETE, CSV) ===
     async function handleLogSubmit(event) {
         event.preventDefault();
         const editingId = loggerElements.logForm.dataset.editingId;
@@ -360,9 +395,12 @@
         const date = loggerElements.logDate.value;
         const type = loggerElements.logType.value;
         let description = loggerElements.logDescription.value.trim();
+        
         if (!platform || !type || !category) throw new Error("Prašome pasirinkti platformą, tipą ir kategoriją.");
+        
         const commonData = { date, type, category, description, platform };
         let operations = [];
+
         if (platform === 'go' && category === 'Level-up') {
             const ggt = parseFloat(loggerElements.goLevelUpGgt.value) || 0;
             const gmt = parseFloat(loggerElements.goLevelUpGmt.value) || 0;
@@ -394,31 +432,56 @@
                 if (!isNaN(amount) && amount > 0) operations.push({ ...commonData, tokenKey: radio.value, tokenAmount: amount });
             }
         }
+
         if (operations.length === 0) throw new Error("Neįvesta jokia suma.");
         for (const op of operations) await createSingleLogEntry(op);
     }
 
     async function createSingleLogEntry(entryData) {
         const sb = getSupabase();
-        if(!sb) throw new Error("Klaida: Nėra ryšio su DB.");
-        let userId = null;
-        if (sb.auth && typeof sb.auth.getUser === 'function') {
-             const { data } = await sb.auth.getUser();
-             if (data && data.user) userId = data.user.id;
-        }
+        if (!sb) throw new Error("Klaida: Nėra ryšio su DB.");
+        
+        // KRITINIS PATAISYMAS: Gauti user_id
+        const { data: { user } } = await sb.auth.getUser();
+        if (!user) throw new Error("Vartotojas neprisijungęs.");
+        
+        console.log('💾 Saugoma transakcija vartotojui:', user.email);
+        
         loggerElements.logSubmitBtn.textContent = `Išsaugoma...`;
+        
         let rate = 0;
         if (window.appActions && window.appActions.getPriceForDate) {
-            try { rate = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date); } catch (e) {}
+            try { 
+                rate = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date); 
+            } catch (e) {
+                console.error('Klaida gaunant kainą:', e);
+            }
         }
-        const record = { ...entryData, token: entryData.tokenKey, token_amount: entryData.tokenAmount, rate_usd: rate, user_id: userId };
-        delete record.tokenKey; delete record.tokenAmount;
+        
+        const record = { 
+            ...entryData, 
+            token: entryData.tokenKey, 
+            token_amount: entryData.tokenAmount, 
+            rate_usd: rate, 
+            user_id: user.id // SVARBU: Pridėti user_id
+        };
+        
+        delete record.tokenKey;
+        delete record.tokenAmount;
+        
         const { error } = await sb.from('transactions').insert(record);
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Klaida saugant:', error);
+            throw error;
+        }
+        
+        console.log('✅ Transakcija išsaugota');
     }
 
     async function handleUpdate(id) {
         const sb = getSupabase();
+        if(!sb) throw new Error("Klaida: Nėra ryšio su DB.");
+
         const record = {
             date: loggerElements.logDate.value,
             type: loggerElements.logType.value,
@@ -429,12 +492,14 @@
             platform: loggerElements.platform.value,
             rate_usd: parseFloat(loggerElements.editRateUsd.value)
         };
+        
         if (window.appActions.getPriceForDate) {
              const oldEntry = JSON.parse(loggerElements.logForm.dataset.oldEntry);
              if (record.date !== oldEntry.date || record.token !== oldEntry.token) {
                  record.rate_usd = await window.appActions.getPriceForDate(record.token, record.date);
              }
         }
+        
         const { error } = await sb.from('transactions').update(record).eq('id', id);
         if (error) throw error;
     }
