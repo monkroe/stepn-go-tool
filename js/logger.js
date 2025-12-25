@@ -1,9 +1,31 @@
-// Failas: js/logger.js (Versija V1.1.10 - PILNAS, UI FIRST, NO ID FILTER)
+// Failas: js/logger.js (Versija V1.1.11 - Su integruotu Supabase prisijungimu)
 
 (function() {
     'use strict';
 
-    // === 1. KONFIGŪRACIJA IR KINTAMIEJI ===
+    // === 1. INTEGRUOTI SUPABASE NUSTATYMAI (Kad nereikėtų kito failo) ===
+    const SB_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpvamh1cmh3bWNlb3F4a2F0dmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNjYxNDYsImV4cCI6MjA2NDc0MjE0Nn0.NFGhQc7H95U9vOaM7OVxNUgTuXSughz8ZuxaCLfbfQE';
+
+    // === 2. SAUGI PRISIJUNGIMO FUNKCIJA ===
+    function getSupabase() {
+        // 1. Bandome naudoti globalų, jei jis jau geras (turi .auth)
+        if (window.supabase && window.supabase.auth) {
+            return window.supabase;
+        }
+        // 2. Jei globalus blogas, susikuriame savo čia ir dabar
+        if (typeof supabase !== 'undefined' && supabase.createClient) {
+            const client = supabase.createClient(SB_URL, SB_KEY);
+            // Išsaugome ateičiai
+            window.supabase = client;
+            return client;
+        }
+        // 3. Jei niekas neveikia
+        console.error("Supabase biblioteka nerasta. Patikrinkite internetą.");
+        return null;
+    }
+
+    // === 3. KATEGORIJOS IR KINTAMIEJI ===
     const CATEGORIES = {
         go: {
             income: { "GGT Earnings": "GGT uždarbis", "Sneaker Rental": "Sportbačių nuoma", "Sneaker Sale": "Sportbačių pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas", "Other": "Kita" },
@@ -30,31 +52,22 @@
     const loggerElements = {};
     let currentLogData = []; 
 
-    // Globalios funkcijos
     window.appActions = window.appActions || {};
     window.appActions.initLogger = initLogger;
     window.appActions.loadAndRenderLogTable = loadAndRenderLogTable;
     window.appActions.renderLogTable = renderLogTable;
 
-    // === 2. INICIALIZACIJA ===
+    // === 4. INICIALIZACIJA ===
     function initLogger() {
         cacheLoggerElements();
-        
-        // SVARBU: Iškart paruošiame UI, kad mygtukai veiktų
         populateCategoryFilter();
         resetLogForm();
         bindLoggerEventListeners();
         
-        // Duomenis bandome krauti šiek tiek vėliau, kad neužstrigtų UI
+        // Priverstinis duomenų užkrovimas po trumpos pauzės
         setTimeout(() => {
             loadAndRenderLogTable();
-        }, 500);
-    }
-
-    function getSupabase() {
-        if (typeof supabase !== 'undefined') return supabase;
-        if (window.supabase) return window.supabase;
-        return null;
+        }, 300);
     }
 
     function cacheLoggerElements() {
@@ -95,14 +108,12 @@
         if (loggerElements.editAmountUsd) loggerElements.editAmountUsd.addEventListener('input', () => syncEditInputs('amount'));
     }
 
-    // === 3. UI VALDYMAS (KATEGORIJOS IR LAUKAI) ===
+    // === 5. FORMOS LOGIKA ===
     function populateCategoryFilter() {
         if (!loggerElements.filterCategory) return;
         const allCategories = new Set();
         const reverseCategoryMap = {};
-        let categoryOrder = [];
-
-        // Nustatome, kokią platformą rodyti filtre (default: go ir og, jei nepasirinkta)
+        
         const currentPlat = loggerElements.platform && loggerElements.platform.value ? loggerElements.platform.value : 'go';
         const platformsToProcess = loggerElements.platform && loggerElements.platform.value ? [currentPlat] : ['go', 'og'];
 
@@ -112,14 +123,11 @@
                 Object.entries(CATEGORIES[plat][type]).forEach(([key, value]) => {
                     allCategories.add(value);
                     reverseCategoryMap[value] = key;
-                    categoryOrder.push(value); 
                 });
             });
         });
 
-        // Rikiuojame
         const sortedCategories = [...allCategories].sort();
-        
         let optionsHTML = `<option value="">Visos</option>`;
         sortedCategories.forEach(cat => {
             const key = reverseCategoryMap[cat] || cat;
@@ -157,7 +165,6 @@
             optionsHTML += `<option value="${key}">${value}</option>`;
         });
         
-        // Išsaugome seną pasirinkimą, jei jis vis dar validus
         const currentVal = loggerElements.logCategory.value;
         loggerElements.logCategory.innerHTML = optionsHTML;
         if (platformCategories[currentVal]) loggerElements.logCategory.value = currentVal;
@@ -170,19 +177,16 @@
         const platform = loggerElements.platform.value;
         const category = loggerElements.logCategory.value;
         
-        // Paslepiame viską
         ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'ogRestoreFields', 'editFields'].forEach(id => { 
             if(loggerElements[id]) loggerElements[id].classList.add('hidden'); 
         });
 
-        // Rodome redagavimo laukus
         if (loggerElements.logForm.dataset.editingId) {
             loggerElements.standardFields.classList.remove('hidden');
             loggerElements.editFields.classList.remove('hidden');
             return;
         }
 
-        // Rodome specifinius laukus
         if (platform === 'go' && (category === 'Gem Removal' || category === 'Socket Unlock')) {
             loggerElements.standardFields.classList.remove('hidden');
             updateTokenRadioButtons(['ggt']);
@@ -217,27 +221,26 @@
     function syncEditInputs(source) {
         const rate = parseFloat(loggerElements.editRateUsd.value);
         const amount = parseFloat(loggerElements.logTokenAmount.value);
-        const total = parseFloat(loggerElements.editAmountUsd.value);
-        
         if (source === 'rate' && !isNaN(rate) && !isNaN(amount)) {
             loggerElements.editAmountUsd.value = (amount * rate).toFixed(2);
-        } else if (source === 'amount' && !isNaN(total) && !isNaN(amount) && amount > 0) {
-            loggerElements.editRateUsd.value = (total / amount).toFixed(8);
+        } else if (source === 'amount' && !isNaN(parseFloat(loggerElements.editAmountUsd.value)) && !isNaN(amount) && amount > 0) {
+            loggerElements.editRateUsd.value = (parseFloat(loggerElements.editAmountUsd.value) / amount).toFixed(8);
         }
     }
 
-    // === 4. DUOMENŲ GAVIMAS IR ATVAIZDAVIMAS ===
+    // === 6. DUOMENŲ GAVIMAS (Su apsauga nuo klaidų) ===
     async function loadAndRenderLogTable() {
         const sb = getSupabase();
-        if (!sb) {
-            console.warn("Supabase not loaded yet");
+        
+        // Jei vis tiek nepavyko gauti kliento, rodome klaidą konsolėje ir išeiname,
+        // bet forma lieka veikti.
+        if (!sb || !sb.from) {
+            console.warn("Supabase klientas dar nepasiruošęs arba .from funkcija nerasta.");
             return;
         }
 
-        // RODO VISUS DUOMENIS (User ID filtras išjungtas specialiai)
         let query = sb.from('transactions').select('*');
         
-        // Filtrai
         if (loggerElements.filterStartDate.value) query = query.gte('date', loggerElements.filterStartDate.value);
         if (loggerElements.filterEndDate.value) query = query.lte('date', loggerElements.filterEndDate.value);
         if (loggerElements.filterToken.value) query = query.eq('token', loggerElements.filterToken.value);
@@ -248,7 +251,6 @@
         const { data, error } = await query;
         if (error) { 
             console.error('DB Error:', error); 
-            // Nerodome alert, kad neerzintų, tiesiog konsolėje
             return; 
         }
         
@@ -371,7 +373,7 @@
         loggerElements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2 text-white">Bendra suvestinė</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
     }
 
-    // === 5. VEIKSMAI (SUBMIT, EDIT, DELETE, CSV) ===
+    // === 7. VEIKSMAI (CREATE, UPDATE, DELETE, CSV) ===
     async function handleLogSubmit(event) {
         event.preventDefault();
         const editingId = loggerElements.logForm.dataset.editingId;
@@ -400,7 +402,6 @@
         const commonData = { date, type, category, description, platform };
         let operations = [];
 
-        // Logika išlieka tokia pati
         if (platform === 'go' && category === 'Level-up') {
             const ggt = parseFloat(loggerElements.goLevelUpGgt.value) || 0;
             const gmt = parseFloat(loggerElements.goLevelUpGmt.value) || 0;
@@ -439,8 +440,14 @@
 
     async function createSingleLogEntry(entryData) {
         const sb = getSupabase();
-        if(!sb) throw new Error("Klaida: Nepavyko prisijungti prie duomenų bazės.");
-        const { data: { user } } = await sb.auth.getUser();
+        if(!sb) throw new Error("Klaida: Nepavyko prisijungti prie duomenų bazės. Patikrinkite internetą.");
+        
+        // PATAISYMAS: Tikriname, ar .auth išvis egzistuoja, prieš kviečiant getUser
+        let userId = null;
+        if (sb.auth && typeof sb.auth.getUser === 'function') {
+             const { data } = await sb.auth.getUser();
+             if (data && data.user) userId = data.user.id;
+        }
         
         loggerElements.logSubmitBtn.textContent = `Išsaugoma...`;
         
@@ -449,7 +456,7 @@
             try { rate = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date); } catch (e) {}
         }
 
-        const record = { ...entryData, token: entryData.tokenKey, token_amount: entryData.tokenAmount, rate_usd: rate, user_id: user ? user.id : null };
+        const record = { ...entryData, token: entryData.tokenKey, token_amount: entryData.tokenAmount, rate_usd: rate, user_id: userId };
         delete record.tokenKey; delete record.tokenAmount;
         
         const { error } = await sb.from('transactions').insert(record);
@@ -458,6 +465,8 @@
 
     async function handleUpdate(id) {
         const sb = getSupabase();
+        if(!sb) throw new Error("Klaida: Nėra ryšio su duomenų baze.");
+
         const record = {
             date: loggerElements.logDate.value,
             type: loggerElements.logType.value,
@@ -499,6 +508,7 @@
         if (!row || !row.dataset.id) return;
         const id = parseInt(row.dataset.id);
         const sb = getSupabase();
+        if(!sb) return;
 
         if (btn.matches('.btn-delete')) {
             if (confirm('Ar tikrai trinti?')) {
