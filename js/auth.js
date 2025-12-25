@@ -1,36 +1,70 @@
-// Failas: auth.js (Galutinė, hibridinė versija)
+// Failas: auth.js (Galutinė pataisyta versija)
 
 const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
 const userEmail = document.getElementById('user-email');
 
-// Iškart patikriname sesiją
+// OAuth callback apdorojimas
+async function handleOAuthCallback() {
+  if (window.location.hash.includes('access_token') || window.location.hash.includes('error')) {
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('OAuth klaida:', error);
+      alert('Prisijungimo klaida. Bandykite dar kartą.');
+    }
+    
+    // Išvalyti URL nuo hash parametrų
+    window.history.replaceState({}, document.title, window.location.pathname);
+    
+    if (data.session) {
+      updateAuthUI(data.session);
+      // Inicializuoti Logger po prisijungimo
+      if (window.appActions && window.appActions.loadAndRenderLogTable) {
+        window.appActions.loadAndRenderLogTable();
+      }
+    }
+  }
+}
+
+// Paleisti OAuth callback tikrinimą
+handleOAuthCallback();
+
+// Patikriname sesiją
 supabase.auth.getSession().then(({ data: { session } }) => {
   updateAuthUI(session);
+  // Įkelti transakcijas jei prisijungęs
+  if (session && window.appActions && window.appActions.loadAndRenderLogTable) {
+    window.appActions.loadAndRenderLogTable();
+  }
 });
 
 // Klausomės būsenos pasikeitimų
 supabase.auth.onAuthStateChange((_event, session) => {
   updateAuthUI(session);
+  // Perkrauti transakcijas kai būsena pasikeičia
+  if (session && window.appActions && window.appActions.loadAndRenderLogTable) {
+    window.appActions.loadAndRenderLogTable();
+  }
 });
 
 // Prisijungimo mygtuko veiksmas
-loginBtn.addEventListener('click', () => {
-  // === GALUTINIS PATAISYMAS ===
-  // Aišiai nurodome 'redirectTo' su teisingu, "švariu" adresu.
-  // Tai išsprendžia 404 klaidą.
-  supabase.auth.signInWithOAuth({
+loginBtn.addEventListener('click', async () => {
+  const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'https://monkroe.github.io/stepn-go-tool/'
+      redirectTo: 'https://monkroe.github.io/stepn-go-tool'
     }
   });
+  
+  if (error) {
+    console.error('Prisijungimo klaida:', error);
+    alert('Nepavyko pradėti prisijungimo. Bandykite dar kartą.');
+  }
 });
 
 // Atsijungimo mygtuko veiksmas
 logoutBtn.addEventListener('click', async () => {
-  // Naudojame patikimą puslapio perkrovimą, kad išvengtume problemų
-  // su pakartotiniu prisijungimu.
   await supabase.auth.signOut();
   window.location.reload();
 });
