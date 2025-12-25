@@ -1,9 +1,22 @@
-// Failas: js/logger.js (Versija V1.1.2 - Pridėta "Gem Removal" kategorija)
+// Failas: js/logger.js (V1.1.2 - Originali logika, pataisytas kintamojo gavimas)
 
 (function() {
     'use strict';
     
-    // === PAKEITIMAS PRASIDEDA ČIA ===
+    // === PATAISYMAS: Saugiai gauname globalų Supabase kintamąjį ===
+    // Mes nekuriam naujo kliento, o ieškome to, kurį sukūrė js/supabase.js
+    let sb = null;
+    
+    function getSupabase() {
+        if (sb) return sb;
+        // Bandome įvairius variantus, kur gali slėptis klientas
+        if (typeof supabase !== 'undefined') return supabase;
+        if (window.supabaseClient) return window.supabaseClient;
+        if (window.supabase && window.supabase.auth) return window.supabase;
+        return null;
+    }
+    // ==============================================================
+
     const CATEGORIES = {
         go: {
             income: { "GGT Earnings": "GGT uždarbis", "Sneaker Rental": "Sportbačių nuoma", "Sneaker Sale": "Sportbačių pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas", "Other": "Kita" },
@@ -11,7 +24,7 @@
                 "Level-up": "Lygio kėlimas", 
                 "Minting": "Mintinimas", 
                 "Socket Unlock": "Socket atidarymas",
-                "Gem Removal": "Brangakmenio išėmimas", // NAUJA KATEGORIJA
+                "Gem Removal": "Brangakmenio išėmimas", 
                 "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", 
                 "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas", 
                 "Sneaker Purchase": "Sportbačių pirkimas", 
@@ -26,7 +39,6 @@
             expense: { "Repair": "Taisymas (HP)", "Level-up": "Lygio kėlimas", "Mystery Box opening": "Dėžutės atidarymas", "Restore": "Atributų atkūrimas", "Minting": "Mintinimas", "Sneaker Purchase": "Sportbačių pirkimas", "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", "Scroll Purchase": "'Minting Scroll' pirkimas", "Other": "Kita" }
         }
     };
-    // === PAKEITIMAS BAIGIASI ČIA ===
 
     const loggerElements = {};
     let currentLogData = []; 
@@ -38,10 +50,17 @@
 
     function initLogger() {
         cacheLoggerElements();
-        populateCategoryFilter();
-        resetLogForm();
-        bindLoggerEventListeners();
-        loadAndRenderLogTable();
+        // Palaukiame, kol visi failai (įskaitant supabase.js) užsikraus
+        setTimeout(() => {
+            sb = getSupabase(); // Bandome gauti klientą
+            if (!sb) {
+                console.error("Supabase nerastas! Patikrinkite, ar js/supabase.js užkrautas.");
+            }
+            populateCategoryFilter();
+            resetLogForm();
+            bindLoggerEventListeners();
+            loadAndRenderLogTable();
+        }, 500);
     }
 
     function cacheLoggerElements() {
@@ -84,57 +103,45 @@
     }
 
     function populateCategoryFilter() {
-        if (!loggerElements.filterCategory) return;
+        if (!loggerElements.filterCategory || !loggerElements.platform) return;
         
         const reverseCategoryMap = {};
         const allCategories = new Set();
         
-        let categoryOrder = [];
-
-        const processPlatform = (plat) => {
-            const incomeKeys = Object.keys(CATEGORIES[plat].income);
-            const expenseKeys = Object.keys(CATEGORIES[plat].expense);
-            
-            incomeKeys.forEach(key => {
-                const value = CATEGORIES[plat].income[key];
-                allCategories.add(value);
-                if (!reverseCategoryMap[value]) reverseCategoryMap[value] = key;
+        const collectCats = (plat) => {
+            if (!CATEGORIES[plat]) return;
+            ['income', 'expense'].forEach(type => {
+                if (CATEGORIES[plat][type]) {
+                    Object.entries(CATEGORIES[plat][type]).forEach(([key, value]) => {
+                        allCategories.add(value);
+                        reverseCategoryMap[value] = key;
+                    });
+                }
             });
-            expenseKeys.forEach(key => {
-                const value = CATEGORIES[plat].expense[key];
-                allCategories.add(value);
-                if (!reverseCategoryMap[value]) reverseCategoryMap[value] = key;
-            });
-            
-            categoryOrder.push(...incomeKeys.map(k => CATEGORIES[plat].income[k]));
-            categoryOrder.push(...expenseKeys.map(k => CATEGORIES[plat].expense[k]));
         };
 
-        if (loggerElements.platform.value) {
-            processPlatform(loggerElements.platform.value);
+        const currentPlat = loggerElements.platform.value;
+        if (currentPlat) {
+            collectCats(currentPlat);
             loggerElements.filterCategory.disabled = false;
         } else {
-            processPlatform('go');
-            processPlatform('og');
-            loggerElements.filterCategory.disabled = true;
+            collectCats('go');
+            collectCats('og');
         }
         
-        const sortedCategories = [...allCategories].sort((a, b) => {
-            const indexA = categoryOrder.indexOf(a);
-            const indexB = categoryOrder.indexOf(b);
-            if(indexA === -1) return 1;
-            if(indexB === -1) return -1;
-            return indexA - indexB;
-        });
+        const sortedCategories = Array.from(allCategories).sort();
 
         let optionsHTML = `<option value="">Visos</option>`;
-        
         sortedCategories.forEach(cat => {
             const key = reverseCategoryMap[cat] || cat;
             optionsHTML += `<option value="${key}">${cat}</option>`;
         });
 
         loggerElements.filterCategory.innerHTML = optionsHTML;
+    }
+    
+    function updateCategoryFilter() {
+        populateCategoryFilter();
     }
 
     async function handleLogSubmit(event) {
@@ -160,7 +167,9 @@
         const date = loggerElements.logDate.value;
         const type = loggerElements.logType.value;
         let description = loggerElements.logDescription.value.trim();
+        
         if (!platform || !type || !category) throw new Error("Prašome pasirinkti platformą, tipą ir kategoriją.");
+        
         const commonData = { date, type, category, description, platform };
         let operations = [];
 
@@ -176,19 +185,20 @@
             if (gmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: gmt });
         } else if (platform === 'og' && category === 'Minting') {
             const gst = parseFloat(loggerElements.ogMintGst.value) || 0;
-            const gmtDirect = parseFloat(loggerElements.ogMintGmt.value) || 0;
+            const gmt = parseFloat(loggerElements.ogMintGmt.value) || 0;
             const scrollsCost = parseFloat(loggerElements.ogMintScrollsCost.value) || 0;
-            const totalGmt = gmtDirect + scrollsCost;
             
             if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
-            if (totalGmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: totalGmt });
+            if (gmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: gmt });
+            if (scrollsCost > 0) operations.push({ ...commonData, description: description ? description + " (Scrolls)" : "(Scrolls Cost)", tokenKey: 'gmt', tokenAmount: scrollsCost });
         } else if (platform === 'og' && category === 'Restore') {
             const gst = parseFloat(loggerElements.ogRestoreGst.value) || 0;
             const gmtDirect = parseFloat(loggerElements.ogRestoreGmt.value) || 0;
             const gmtGems = parseFloat(loggerElements.ogRestoreGemsGmt.value) || 0;
-            const totalGmt = gmtDirect + gmtGems;
+            
             if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
-            if (totalGmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: totalGmt });
+            if (gmtDirect > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: gmtDirect });
+            if (gmtGems > 0) operations.push({ ...commonData, description: description ? description + " (Gems)" : "(Gems Cost)", tokenKey: 'gmt', tokenAmount: gmtGems });
         }
         else {
             const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
@@ -210,18 +220,42 @@
     }
 
     async function createSingleLogEntry(entryData) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Vartotojas neprisijungęs.");
-        loggerElements.logSubmitBtn.textContent = `Išsaugoma ${entryData.tokenKey.toUpperCase()}...`;
-        const rate_usd = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date);
-        const record = { ...entryData, token: entryData.tokenKey, token_amount: entryData.tokenAmount, rate_usd, user_id: user.id };
+        sb = getSupabase(); // Užtikriname, kad turime klientą
+        if (!sb) throw new Error("Supabase klientas nerastas. Perkraukite puslapį.");
+
+        const { data: { user } } = await sb.auth.getUser();
+        if (!user) throw new Error("Vartotojas neprisijungęs. Perkraukite puslapį ir prisijunkite iš naujo.");
+        
+        if (loggerElements.logSubmitBtn) {
+            loggerElements.logSubmitBtn.textContent = `Išsaugoma ${entryData.tokenKey.toUpperCase()}...`;
+        }
+        
+        let rate_usd = 0;
+        if (window.appActions && window.appActions.getPriceForDate) {
+            try {
+                rate_usd = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date);
+            } catch (e) {
+                console.warn("Nepavyko gauti kainos:", e);
+            }
+        }
+
+        const record = { 
+            ...entryData, 
+            token: entryData.tokenKey, 
+            token_amount: entryData.tokenAmount, 
+            rate_usd: rate_usd, 
+            user_id: user.id 
+        };
+        
         delete record.tokenKey;
         delete record.tokenAmount;
-        const { error } = await supabase.from('transactions').insert(record);
+        
+        const { error } = await sb.from('transactions').insert(record);
         if (error) throw error;
     }
 
     async function handleUpdate(id) {
+        sb = getSupabase();
         const record = {
             date: loggerElements.logDate.value,
             type: loggerElements.logType.value,
@@ -235,35 +269,37 @@
         const oldEntry = JSON.parse(loggerElements.logForm.dataset.oldEntry);
         if (record.date !== oldEntry.date || record.token !== oldEntry.token) {
             loggerElements.logSubmitBtn.textContent = 'Gaunamas kursas...';
-            record.rate_usd = await window.appActions.getPriceForDate(record.token, record.date);
+            if (window.appActions.getPriceForDate) {
+                record.rate_usd = await window.appActions.getPriceForDate(record.token, record.date);
+            }
         }
-        const { error } = await supabase.from('transactions').update(record).eq('id', id);
+        const { error } = await sb.from('transactions').update(record).eq('id', id);
         if (error) throw error;
     }
 
     async function handleLogTableClick(event) {
         const target = event.target;
         const separatorRow = target.closest('.date-separator-row');
-        const actionButton = target.closest('button');
-
         if (separatorRow) {
             handleAccordionToggle(separatorRow);
             return;
         }
 
+        const actionButton = target.closest('button');
         if (actionButton) {
             const row = actionButton.closest('tr');
             if (!row || !row.dataset.id) return;
             const entryId = parseInt(row.dataset.id);
+            sb = getSupabase();
 
             if (actionButton.matches('.btn-delete')) {
                 if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
-                    const { error } = await supabase.from('transactions').delete().eq('id', entryId);
+                    const { error } = await sb.from('transactions').delete().eq('id', entryId);
                     if (error) alert(`Klaida trinant: ${error.message}`);
                     else await loadAndRenderLogTable();
                 }
             } else if (actionButton.matches('.btn-edit')) {
-                const { data, error } = await supabase.from('transactions').select().eq('id', entryId).single();
+                const { data, error } = await sb.from('transactions').select().eq('id', entryId).single();
                 if (error) { alert(`Klaida gaunant įrašą: ${error.message}`); return; }
                 startEditEntry(data);
             }
@@ -299,8 +335,10 @@
         updateVisibleFields();
         const tokensForPlatform = entry.platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc'];
         updateTokenRadioButtons(tokensForPlatform);
-        const radioToSelect = document.querySelector(`input[name="logToken"][value="${entry.token}"]`);
-        if (radioToSelect) radioToSelect.checked = true;
+        setTimeout(() => {
+            const radioToSelect = document.querySelector(`input[name="logToken"][value="${entry.token}"]`);
+            if (radioToSelect) radioToSelect.checked = true;
+        }, 0);
         loggerElements.logTokenAmount.value = entry.token_amount;
         loggerElements.logDescription.value = entry.description;
         loggerElements.editRateUsd.value = (entry.rate_usd || 0).toFixed(8);
@@ -334,6 +372,10 @@
         if (!loggerElements.platform || !loggerElements.logType || !loggerElements.logCategory) return;
         const platform = loggerElements.platform.value;
         const type = loggerElements.logType.value;
+        if (!platform || !type) {
+            loggerElements.logCategory.innerHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
+            return;
+        }
         const platformCategories = CATEGORIES[platform]?.[type] || {};
         const options = Object.entries(platformCategories);
         let optionsHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
@@ -348,7 +390,6 @@
         loggerElements.logCategory.disabled = Object.keys(platformCategories).length === 0;
     }
 
-    // === PAKEITIMAS PRASIDEDA ČIA ===
     function updateVisibleFields() {
         if (!loggerElements.platform || !loggerElements.logCategory) return;
         const platform = loggerElements.platform.value;
@@ -367,7 +408,11 @@
             return;
         }
 
-        if (platform === 'go' && category === 'Level-up') {
+        if (platform === 'go' && (category === 'Gem Removal' || category === 'Socket Unlock')) {
+            loggerElements.standardFields.classList.remove('hidden');
+            updateTokenRadioButtons(['ggt']);
+        }
+        else if (platform === 'go' && category === 'Level-up') {
             loggerElements.goLevelUpFields.classList.remove('hidden');
         } else if (platform === 'og' && category === 'Level-up') {
             loggerElements.ogLevelUpFields.classList.remove('hidden');
@@ -378,10 +423,6 @@
             updateTokenRadioButtons(['gst']);
         } else if (platform === 'og' && category === 'Restore') {
             loggerElements.ogRestoreFields.classList.remove('hidden');
-        } else if (platform === 'go' && (category === 'Socket Unlock' || category === 'Gem Removal')) {
-            // Sujungiame dvi GGT išlaidų kategorijas
-            loggerElements.standardFields.classList.remove('hidden');
-            updateTokenRadioButtons(['ggt']);
         } else if (category) {
             loggerElements.standardFields.classList.remove('hidden');
             let tokensForPlatform = ['gmt', 'sol', 'usdc'];
@@ -393,13 +434,13 @@
             updateTokenRadioButtons(tokensForPlatform);
         }
     }
-    // === PAKEITIMAS BAIGIASI ČIA ===
 
     function updateTokenRadioButtons(tokensToShow) {
         if (!loggerElements.logTokenRadioGroup) return;
-        const tokens = window.appData.tokens;
+        const tokens = window.appData?.tokens || {};
         loggerElements.logTokenRadioGroup.innerHTML = tokensToShow.map((key, index) => {
             const token = tokens[key];
+            if (!token) return '';
             return `<label class="radio-label"><span><img src="${token.logo}" alt="${token.symbol}" class="token-logo">${token.symbol}</span><input type="radio" name="logToken" value="${key}" ${index === 0 ? 'checked' : ''}><span class="radio-custom-dot"></span></label>`;
         }).join('');
     }
@@ -416,14 +457,17 @@
     }
     
     async function loadAndRenderLogTable() {
-        const { data: { user } } = await supabase.auth.getUser();
+        sb = getSupabase();
+        if (!sb) return;
+
+        const { data: { user } } = await sb.auth.getUser();
         if (!user) {
             currentLogData = [];
             renderLogTable(currentLogData);
             populateFilterDropdowns(currentLogData);
             return;
         }
-        let query = supabase.from('transactions').select('*').eq('user_id', user.id);
+        let query = sb.from('transactions').select('*').eq('user_id', user.id);
         
         if (loggerElements.filterStartDate.value) query = query.gte('date', loggerElements.filterStartDate.value);
         if (loggerElements.filterEndDate.value) query = query.lte('date', loggerElements.filterEndDate.value);
@@ -447,8 +491,9 @@
         if (!loggerElements.filterToken) return;
         const uniqueTokens = [...new Set(data.map(item => item.token))];
         let optionsHTML = '<option value="">Visi</option>';
+        const tokens = window.appData?.tokens || {};
         uniqueTokens.sort().forEach(token => { 
-            let displayToken = window.appData.tokens[token]?.symbol || token.toUpperCase();
+            let displayToken = tokens[token]?.symbol || token.toUpperCase();
             if (displayToken === 'GST (SOL)') {
                 displayToken = 'GST';
             }
@@ -488,14 +533,11 @@
 
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
-        loggerElements.logTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Kraunama...</td></tr>';
-        
         if (!data || data.length === 0) {
-            loggerElements.logTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4">Įrašų nerasta.</td></tr>`;
+            loggerElements.logTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">Įrašų nerasta.</td></tr>`;
             renderSummary(0, 0, {});
             return;
         }
-
         const groupedData = groupDataByMonthAndDay(data);
         const months = Object.keys(groupedData).sort().reverse();
         let totalIncomeUSD = 0, totalExpenseUSD = 0;
@@ -510,47 +552,16 @@
             const monthlyNetColor = monthlyNet >= 0 ? 'income-color' : 'expense-color';
             const monthlyNetSign = monthlyNet >= 0 ? '+' : '';
 
-            finalHTML += `
-                <tr class="month-separator-row">
-                    <td colspan="8">
-                        <div class="date-separator-content">
-                            <span>${monthName.toUpperCase()}</span>
-                            <span class="monthly-summary">
-                                <span class="daily-income">+${monthData.monthlyIncome.toFixed(2)}</span>
-                                <span class="daily-expense">-${monthData.monthlyExpense.toFixed(2)}</span>
-                                <span class="daily-net ${monthlyNetColor}">${monthlyNetSign}${monthlyNet.toFixed(2)}</span>
-                            </span>
-                        </div>
-                    </td>
-                </tr>
-            `;
+            finalHTML += `<tr class="month-separator-row"><td colspan="8"><div class="date-separator-content"><span>${monthName.toUpperCase()}</span><span class="monthly-summary"><span class="daily-income">+${monthData.monthlyIncome.toFixed(2)}</span><span class="daily-expense">-${monthData.monthlyExpense.toFixed(2)}</span><span class="daily-net ${monthlyNetColor}">${monthlyNetSign}${monthlyNet.toFixed(2)}</span></span></div></td></tr>`;
             
-            const days = Object.keys(monthData.days).sort().reverse();
-
-            days.forEach(dayKey => {
+            Object.keys(monthData.days).sort().reverse().forEach(dayKey => {
                 const dayData = monthData.days[dayKey];
                 const displayDate = new Date(dayKey + 'T00:00:00');
                 const dailyNet = dayData.dailyIncome - dayData.dailyExpense;
                 const netColorClass = dailyNet >= 0 ? 'income-color' : 'expense-color';
                 const netSign = dailyNet >= 0 ? '+' : '';
 
-                finalHTML += `
-                    <tr class="date-separator-row" data-date-group="${dayKey}">
-                        <td colspan="8">
-                            <div class="date-separator-content">
-                                <span class="date-display">
-                                    <span class="toggle-arrow">▸</span>
-                                    ${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                                </span>
-                                <span class="daily-summary">
-                                    <span class="daily-income">+${dayData.dailyIncome.toFixed(2)}</span>
-                                    <span class="daily-expense">-${dayData.dailyExpense.toFixed(2)}</span>
-                                    <span class="daily-net ${netColorClass}">${netSign}${dailyNet.toFixed(2)}</span>
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                finalHTML += `<tr class="date-separator-row expanded" data-date-group="${dayKey}"><td colspan="8"><div class="date-separator-content"><span class="date-display"><span class="toggle-arrow">▾</span> ${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span><span class="daily-summary"><span class="daily-income">+${dayData.dailyIncome.toFixed(2)}</span><span class="daily-expense">-${dayData.dailyExpense.toFixed(2)}</span><span class="daily-net ${netColorClass}">${netSign}${dailyNet.toFixed(2)}</span></span></div></td></tr>`;
 
                 dayData.transactions.forEach(entry => {
                     const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
@@ -564,21 +575,7 @@
                     const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
                     const arrow = isIncome ? '▲' : '▼';
 
-                    finalHTML += `
-                        <tr class="transaction-row hidden" data-id="${entry.id}" data-date-group="${dayKey}">
-                            <td class="align-middle">${entry.date}</td>
-                            <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
-                            <td class="token-cell align-middle">${tokenCellHTML}</td>
-                            <td class="align-middle">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
-                            <td class="align-middle">$${(entry.rate_usd || 0).toFixed(5)}</td>
-                            <td class="align-middle">$${amount_usd.toFixed(2)}</td>
-                            <td class="align-middle">${entry.description || ''}</td>
-                            <td class="log-table-actions align-middle">
-                                <button class="btn-edit">Taisyti</button>
-                                <button class="btn-delete">Trinti</button>
-                            </td>
-                        </tr>
-                    `;
+                    finalHTML += `<tr class="transaction-row" data-id="${entry.id}" data-date-group="${dayKey}"><td class="align-middle text-sm text-gray-400">${entry.date}</td><td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'} font-bold text-center">${arrow}</td><td class="token-cell align-middle">${tokenCellHTML} <span class="ml-1">${tokenSymbol}</span></td><td class="align-middle font-mono ${isIncome ? 'income-color' : 'expense-color'}">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}</td><td class="align-middle text-gray-400">$${(entry.rate_usd || 0).toFixed(4)}</td><td class="align-middle font-bold">$${amount_usd.toFixed(2)}</td><td class="align-middle text-sm text-gray-300">${entry.description || ''}</td><td class="log-table-actions align-middle"><button class="btn-edit">Taisyti</button><button class="btn-delete">Trinti</button></td></tr>`;
                 });
             });
         });
@@ -590,19 +587,19 @@
     function renderSummary(income, expense, tokenBalances) {
         if (!loggerElements.summaryContainer) return;
         const balance = income - expense;
-        const btcPrice = window.appData.prices['bitcoin']?.price;
+        const btcPrice = window.appData?.prices?.['bitcoin']?.price || 0;
         let btcValueHTML = '';
         if (btcPrice > 0) { btcValueHTML = `<div class="summary-row"><span class="summary-label btc-value"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5zm14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5z"/></svg> BTC Atitikmuo:</span><span class="summary-value btc-value">${(balance / btcPrice).toFixed(8)} BTC</span></div>`; }
-        let tokenBalancesHTML = '<hr class="my-4 border-gray-700"><h3 class="text-lg font-semibold mb-2">Žetonų Balansai</h3>';
+        let tokenBalancesHTML = '<hr class="my-4 border-gray-700"><h3 class="text-lg font-semibold mb-2 text-white">Žetonų Balansai</h3>';
+        const tokens = window.appData?.tokens || {};
         Object.keys(tokenBalances).sort().forEach(token => { 
             const amount = tokenBalances[token];
-            let displayToken = window.appData.tokens[token]?.symbol || token.toUpperCase();
-            if (displayToken === 'GST (SOL)') {
-                displayToken = 'GST';
-            }
-            tokenBalancesHTML += `<div class="summary-row"><span class="summary-label">${displayToken} Balansas:</span><span class="summary-value ${amount >= 0 ? 'income-color' : 'expense-color'}">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div>`; 
+            if (Math.abs(amount) < 0.0001) return;
+            let displayToken = tokens[token]?.symbol || token.toUpperCase();
+            if (displayToken === 'GST (SOL)') displayToken = 'GST';
+            tokenBalancesHTML += `<div class="summary-row"><span class="summary-label">${displayToken}:</span><span class="summary-value ${amount >= 0 ? 'income-color' : 'expense-color'}">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div>`; 
         });
-        loggerElements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2">Bendra suvestinė (pagal filtrus)</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
+        loggerElements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2 text-white">Bendra suvestinė</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
     }
 
     function handleExportToCsv() {
