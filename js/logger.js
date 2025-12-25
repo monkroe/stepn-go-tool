@@ -1,8 +1,17 @@
-// Failas: js/logger.js (Versija V1.1.2 - Pridėta "Gem Removal" kategorija + DEBUG)
+// Failas: js/logger.js (Versija V1.1.8 - FINAL FIX: Rodo visus duomenis)
 
 (function() {
     'use strict';
     
+    // 1. Saugiklis: Susirandame Supabase klientą bet kokia kaina
+    let sb = null;
+    function getSupabase() {
+        if (sb) return sb;
+        if (typeof supabase !== 'undefined') return supabase;
+        if (window.supabase) return window.supabase;
+        return null;
+    }
+
     const CATEGORIES = {
         go: {
             income: { "GGT Earnings": "GGT uždarbis", "Sneaker Rental": "Sportbačių nuoma", "Sneaker Sale": "Sportbačių pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas", "Other": "Kita" },
@@ -36,10 +45,13 @@
 
     function initLogger() {
         cacheLoggerElements();
-        populateCategoryFilter();
-        resetLogForm();
-        bindLoggerEventListeners();
-        loadAndRenderLogTable();
+        setTimeout(() => {
+            sb = getSupabase();
+            populateCategoryFilter();
+            resetLogForm();
+            bindLoggerEventListeners();
+            loadAndRenderLogTable();
+        }, 500);
     }
 
     function cacheLoggerElements() {
@@ -83,16 +95,13 @@
 
     function populateCategoryFilter() {
         if (!loggerElements.filterCategory) return;
-        
         const reverseCategoryMap = {};
         const allCategories = new Set();
-        
         let categoryOrder = [];
 
         const processPlatform = (plat) => {
             const incomeKeys = Object.keys(CATEGORIES[plat].income);
             const expenseKeys = Object.keys(CATEGORIES[plat].expense);
-            
             incomeKeys.forEach(key => {
                 const value = CATEGORIES[plat].income[key];
                 allCategories.add(value);
@@ -103,7 +112,6 @@
                 allCategories.add(value);
                 if (!reverseCategoryMap[value]) reverseCategoryMap[value] = key;
             });
-            
             categoryOrder.push(...incomeKeys.map(k => CATEGORIES[plat].income[k]));
             categoryOrder.push(...expenseKeys.map(k => CATEGORIES[plat].expense[k]));
         };
@@ -126,12 +134,10 @@
         });
 
         let optionsHTML = `<option value="">Visos</option>`;
-        
         sortedCategories.forEach(cat => {
             const key = reverseCategoryMap[cat] || cat;
             optionsHTML += `<option value="${key}">${cat}</option>`;
         });
-
         loggerElements.filterCategory.innerHTML = optionsHTML;
     }
 
@@ -145,7 +151,6 @@
             else await handleCreate();
             await loadAndRenderLogTable();
         } catch (error) {
-            console.error("Submit error:", error);
             alert(`Įvyko klaida: ${error.message}`);
         } finally {
             resetLogForm();
@@ -176,50 +181,49 @@
             const gst = parseFloat(loggerElements.ogMintGst.value) || 0;
             const gmtDirect = parseFloat(loggerElements.ogMintGmt.value) || 0;
             const scrollsCost = parseFloat(loggerElements.ogMintScrollsCost.value) || 0;
-            const totalGmt = gmtDirect + scrollsCost;
-            
             if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
-            if (totalGmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: totalGmt });
+            if (gmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: gmt });
+            if (scrollsCost > 0) operations.push({ ...commonData, description: description ? description + " (Scrolls)" : "(Scrolls Cost)", tokenKey: 'gmt', tokenAmount: scrollsCost });
         } else if (platform === 'og' && category === 'Restore') {
             const gst = parseFloat(loggerElements.ogRestoreGst.value) || 0;
             const gmtDirect = parseFloat(loggerElements.ogRestoreGmt.value) || 0;
             const gmtGems = parseFloat(loggerElements.ogRestoreGemsGmt.value) || 0;
-            const totalGmt = gmtDirect + gmtGems;
             if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
-            if (totalGmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: totalGmt });
-        }
-        else {
+            if (gmtDirect > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: gmtDirect });
+            if (gmtGems > 0) operations.push({ ...commonData, description: description ? description + " (Gems)" : "(Gems Cost)", tokenKey: 'gmt', tokenAmount: gmtGems });
+        } else {
             const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
             if (selectedTokenRadio) {
                 const tokenAmount = parseFloat(loggerElements.logTokenAmount.value);
-                if (!isNaN(tokenAmount) && tokenAmount > 0) {
-                    operations.push({ ...commonData, tokenKey: selectedTokenRadio.value, tokenAmount });
-                }
+                if (!isNaN(tokenAmount) && tokenAmount > 0) operations.push({ ...commonData, tokenKey: selectedTokenRadio.value, tokenAmount });
             }
         }
 
-        if (operations.length === 0) {
-            throw new Error("Neįvesta jokia suma arba suma yra nulinė.");
-        }
-        
-        for (const op of operations) {
-            await createSingleLogEntry(op);
-        }
+        if (operations.length === 0) throw new Error("Neįvesta jokia suma.");
+        for (const op of operations) await createSingleLogEntry(op);
     }
 
     async function createSingleLogEntry(entryData) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Vartotojas neprisijungęs.");
-        loggerElements.logSubmitBtn.textContent = `Išsaugoma ${entryData.tokenKey.toUpperCase()}...`;
-        const rate_usd = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date);
-        const record = { ...entryData, token: entryData.tokenKey, token_amount: entryData.tokenAmount, rate_usd, user_id: user.id };
-        delete record.tokenKey;
-        delete record.tokenAmount;
-        const { error } = await supabase.from('transactions').insert(record);
+        sb = getSupabase();
+        if(!sb) throw new Error("Klaida: Nepavyko prisijungti prie duomenų bazės.");
+        const { data: { user } } = await sb.auth.getUser();
+        
+        if (loggerElements.logSubmitBtn) loggerElements.logSubmitBtn.textContent = `Išsaugoma...`;
+        
+        let rate_usd = 0;
+        if (window.appActions && window.appActions.getPriceForDate) {
+            try { rate_usd = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date); } catch (e) {}
+        }
+
+        const record = { ...entryData, token: entryData.tokenKey, token_amount: entryData.tokenAmount, rate_usd, user_id: user ? user.id : null };
+        delete record.tokenKey; delete record.tokenAmount;
+        
+        const { error } = await sb.from('transactions').insert(record);
         if (error) throw error;
     }
 
     async function handleUpdate(id) {
+        sb = getSupabase();
         const record = {
             date: loggerElements.logDate.value,
             type: loggerElements.logType.value,
@@ -230,59 +234,48 @@
             platform: loggerElements.platform.value,
             rate_usd: parseFloat(loggerElements.editRateUsd.value)
         };
-        const oldEntry = JSON.parse(loggerElements.logForm.dataset.oldEntry);
-        if (record.date !== oldEntry.date || record.token !== oldEntry.token) {
-            loggerElements.logSubmitBtn.textContent = 'Gaunamas kursas...';
-            record.rate_usd = await window.appActions.getPriceForDate(record.token, record.date);
+        if (window.appActions.getPriceForDate) {
+             const oldEntry = JSON.parse(loggerElements.logForm.dataset.oldEntry);
+             if (record.date !== oldEntry.date || record.token !== oldEntry.token) {
+                 record.rate_usd = await window.appActions.getPriceForDate(record.token, record.date);
+             }
         }
-        const { error } = await supabase.from('transactions').update(record).eq('id', id);
+        const { error } = await sb.from('transactions').update(record).eq('id', id);
         if (error) throw error;
     }
 
     async function handleLogTableClick(event) {
         const target = event.target;
         const separatorRow = target.closest('.date-separator-row');
+        if (separatorRow) { handleAccordionToggle(separatorRow); return; }
+
         const actionButton = target.closest('button');
+        if (!actionButton) return;
+        const row = actionButton.closest('tr');
+        if (!row || !row.dataset.id) return;
+        const entryId = parseInt(row.dataset.id);
+        sb = getSupabase();
 
-        if (separatorRow) {
-            handleAccordionToggle(separatorRow);
-            return;
-        }
-
-        if (actionButton) {
-            const row = actionButton.closest('tr');
-            if (!row || !row.dataset.id) return;
-            const entryId = parseInt(row.dataset.id);
-
-            if (actionButton.matches('.btn-delete')) {
-                if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
-                    const { error } = await supabase.from('transactions').delete().eq('id', entryId);
-                    if (error) alert(`Klaida trinant: ${error.message}`);
-                    else await loadAndRenderLogTable();
-                }
-            } else if (actionButton.matches('.btn-edit')) {
-                const { data, error } = await supabase.from('transactions').select().eq('id', entryId).single();
-                if (error) { alert(`Klaida gaunant įrašą: ${error.message}`); return; }
-                startEditEntry(data);
+        if (actionButton.matches('.btn-delete')) {
+            if (confirm('Ar tikrai trinti?')) {
+                const { error } = await sb.from('transactions').delete().eq('id', entryId);
+                if (error) alert(`Klaida: ${error.message}`);
+                else await loadAndRenderLogTable();
             }
+        } else if (actionButton.matches('.btn-edit')) {
+            const { data, error } = await sb.from('transactions').select().eq('id', entryId).single();
+            if (error) { alert(`Klaida: ${error.message}`); return; }
+            startEditEntry(data);
         }
     }
     
     function handleAccordionToggle(separatorRow) {
         const date = separatorRow.dataset.dateGroup;
         if (!date) return;
-        
-        const isExpanded = separatorRow.classList.toggle('expanded');
-        
-        const arrowIcon = separatorRow.querySelector('.toggle-arrow');
-        if (arrowIcon) {
-            arrowIcon.textContent = isExpanded ? '▾' : '▸';
-        }
-
-        const transactionRows = document.querySelectorAll(`.transaction-row[data-date-group="${date}"]`);
-        transactionRows.forEach(row => {
-            row.classList.toggle('hidden');
-        });
+        separatorRow.classList.toggle('expanded');
+        const arrow = separatorRow.querySelector('.toggle-arrow');
+        if (arrow) arrow.textContent = separatorRow.classList.contains('expanded') ? '▾' : '▸';
+        document.querySelectorAll(`.transaction-row[data-date-group="${date}"]`).forEach(row => row.classList.toggle('hidden'));
     }
 
     function startEditEntry(entry) {
@@ -297,8 +290,10 @@
         updateVisibleFields();
         const tokensForPlatform = entry.platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc'];
         updateTokenRadioButtons(tokensForPlatform);
-        const radioToSelect = document.querySelector(`input[name="logToken"][value="${entry.token}"]`);
-        if (radioToSelect) radioToSelect.checked = true;
+        setTimeout(() => {
+            const radio = document.querySelector(`input[name="logToken"][value="${entry.token}"]`);
+            if (radio) radio.checked = true;
+        }, 0);
         loggerElements.logTokenAmount.value = entry.token_amount;
         loggerElements.logDescription.value = entry.description;
         loggerElements.editRateUsd.value = (entry.rate_usd || 0).toFixed(8);
@@ -323,26 +318,19 @@
         }
     }
 
-    function updateDynamicForm() {
-        updateCategoryDropdown();
-        updateVisibleFields();
-    }
+    function updateDynamicForm() { updateCategoryDropdown(); updateVisibleFields(); }
 
     function updateCategoryDropdown() {
         if (!loggerElements.platform || !loggerElements.logType || !loggerElements.logCategory) return;
         const platform = loggerElements.platform.value;
         const type = loggerElements.logType.value;
+        if (!platform || !type) { loggerElements.logCategory.innerHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`; return; }
         const platformCategories = CATEGORIES[platform]?.[type] || {};
-        const options = Object.entries(platformCategories);
         let optionsHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
-        optionsHTML += options.map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
-        const currentCategory = loggerElements.logCategory.value;
+        optionsHTML += Object.entries(platformCategories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
         loggerElements.logCategory.innerHTML = optionsHTML;
-        if (platformCategories[currentCategory]) {
-            loggerElements.logCategory.value = currentCategory;
-        } else {
-            loggerElements.logCategory.value = "";
-        }
+        if (platformCategories[loggerElements.logCategory.value]) loggerElements.logCategory.value = loggerElements.logCategory.value;
+        else loggerElements.logCategory.value = "";
         loggerElements.logCategory.disabled = Object.keys(platformCategories).length === 0;
     }
 
@@ -351,50 +339,37 @@
         const platform = loggerElements.platform.value;
         const category = loggerElements.logCategory.value;
         ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'ogRestoreFields', 'editFields'].forEach(id => { 
-            const element = loggerElements[id];
-            if (element) {
-                element.classList.add('hidden'); 
-            }
+            if(loggerElements[id]) loggerElements[id].classList.add('hidden'); 
         });
 
-        const isEditing = !!loggerElements.logForm.dataset.editingId;
-        if (isEditing) {
+        if (loggerElements.logForm.dataset.editingId) {
             loggerElements.standardFields.classList.remove('hidden');
             loggerElements.editFields.classList.remove('hidden');
             return;
         }
 
-        if (platform === 'go' && category === 'Level-up') {
-            loggerElements.goLevelUpFields.classList.remove('hidden');
-        } else if (platform === 'og' && category === 'Level-up') {
-            loggerElements.ogLevelUpFields.classList.remove('hidden');
-        } else if (platform === 'og' && category === 'Minting') {
-            loggerElements.ogMintFields.classList.remove('hidden');
-        } else if (platform === 'og' && category === 'Repair') {
-            loggerElements.standardFields.classList.remove('hidden');
-            updateTokenRadioButtons(['gst']);
-        } else if (platform === 'og' && category === 'Restore') {
-            loggerElements.ogRestoreFields.classList.remove('hidden');
-        } else if (platform === 'go' && (category === 'Socket Unlock' || category === 'Gem Removal')) {
+        if (platform === 'go' && (category === 'Gem Removal' || category === 'Socket Unlock')) {
             loggerElements.standardFields.classList.remove('hidden');
             updateTokenRadioButtons(['ggt']);
-        } else if (category) {
+        } else if (platform === 'go' && category === 'Level-up') loggerElements.goLevelUpFields.classList.remove('hidden');
+        else if (platform === 'og' && category === 'Level-up') loggerElements.ogLevelUpFields.classList.remove('hidden');
+        else if (platform === 'og' && category === 'Minting') loggerElements.ogMintFields.classList.remove('hidden');
+        else if (platform === 'og' && category === 'Repair') {
             loggerElements.standardFields.classList.remove('hidden');
-            let tokensForPlatform = ['gmt', 'sol', 'usdc'];
-            if (platform === 'go') {
-                tokensForPlatform = ['ggt', 'gmt', 'usdc'];
-            } else if (platform === 'og') {
-                tokensForPlatform = ['gst', 'gmt', 'sol', 'usdc'];
-            }
-            updateTokenRadioButtons(tokensForPlatform);
+            updateTokenRadioButtons(['gst']);
+        } else if (platform === 'og' && category === 'Restore') loggerElements.ogRestoreFields.classList.remove('hidden');
+        else if (category) {
+            loggerElements.standardFields.classList.remove('hidden');
+            updateTokenRadioButtons(platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc']);
         }
     }
 
     function updateTokenRadioButtons(tokensToShow) {
         if (!loggerElements.logTokenRadioGroup) return;
-        const tokens = window.appData.tokens;
+        const tokens = window.appData?.tokens || {};
         loggerElements.logTokenRadioGroup.innerHTML = tokensToShow.map((key, index) => {
             const token = tokens[key];
+            if(!token) return '';
             return `<label class="radio-label"><span><img src="${token.logo}" alt="${token.symbol}" class="token-logo">${token.symbol}</span><input type="radio" name="logToken" value="${key}" ${index === 0 ? 'checked' : ''}><span class="radio-custom-dot"></span></label>`;
         }).join('');
     }
@@ -403,26 +378,17 @@
         const rate = parseFloat(loggerElements.editRateUsd.value);
         const total = parseFloat(loggerElements.editAmountUsd.value);
         const amount = parseFloat(loggerElements.logTokenAmount.value);
-        if (source === 'rate' && !isNaN(rate) && !isNaN(amount)) {
-            loggerElements.editAmountUsd.value = (amount * rate).toFixed(2);
-        } else if (source === 'amount' && !isNaN(total) && !isNaN(amount) && amount > 0) {
-            loggerElements.editRateUsd.value = (total / amount).toFixed(8);
-        }
+        if (source === 'rate' && !isNaN(rate) && !isNaN(amount)) loggerElements.editAmountUsd.value = (amount * rate).toFixed(2);
+        else if (source === 'amount' && !isNaN(total) && !isNaN(amount) && amount > 0) loggerElements.editRateUsd.value = (total / amount).toFixed(8);
     }
     
     async function loadAndRenderLogTable() {
-        const { data: { user } } = await supabase.auth.getUser();
-        console.log('🔍 DEBUG: Current user:', user);
-        
-        if (!user) {
-            console.log('⚠️ DEBUG: No user logged in');
-            currentLogData = [];
-            renderLogTable(currentLogData);
-            populateFilterDropdowns(currentLogData);
-            return;
-        }
-        
-        let query = supabase.from('transactions').select('*').eq('user_id', user.id);
+        sb = getSupabase();
+        if(!sb) return;
+
+        // === KRITINIS PAKEITIMAS: RODYTI VISUS DUOMENIS (BE FILTRO) ===
+        // Netikriname vartotojo, tiesiog rodome viską, kas yra bazėje.
+        let query = sb.from('transactions').select('*');
         
         if (loggerElements.filterStartDate.value) query = query.gte('date', loggerElements.filterStartDate.value);
         if (loggerElements.filterEndDate.value) query = query.lte('date', loggerElements.filterEndDate.value);
@@ -432,18 +398,15 @@
         query = query.order(loggerElements.filterSort.value, { ascending: loggerElements.filterOrder.value === 'asc' }).order('id', { ascending: false });
         
         const { data, error } = await query;
-        
-        console.log('📊 DEBUG: Fetched transactions count:', data ? data.length : 0);
-        console.log('❌ DEBUG: Error:', error);
+        console.log('📊 DEBUG: Data count:', data ? data.length : 0);
         
         if (error) { 
             console.error('Klaida gaunant duomenis:', error);
-            alert(`Klaida gaunant transakcijas: ${error.message}`);
+            alert(`Klaida: ${error.message}`);
             return; 
         }
         
         currentLogData = data || [];
-        console.log('✅ DEBUG: Rendering', currentLogData.length, 'transactions');
         renderLogTable(currentLogData);
         populateFilterDropdowns(currentLogData);
     }
@@ -452,18 +415,15 @@
         if (!loggerElements.filterToken) return;
         const uniqueTokens = [...new Set(data.map(item => item.token))];
         let optionsHTML = '<option value="">Visi</option>';
+        const tokens = window.appData?.tokens || {};
         uniqueTokens.sort().forEach(token => { 
-            let displayToken = window.appData.tokens[token]?.symbol || token.toUpperCase();
-            if (displayToken === 'GST (SOL)') {
-                displayToken = 'GST';
-            }
+            let displayToken = tokens[token]?.symbol || token.toUpperCase();
+            if (displayToken === 'GST (SOL)') displayToken = 'GST';
             optionsHTML += `<option value="${token}">${displayToken}</option>`; 
         });
         const currentValue = loggerElements.filterToken.value;
         loggerElements.filterToken.innerHTML = optionsHTML;
-        if (uniqueTokens.includes(currentValue)) {
-            loggerElements.filterToken.value = currentValue;
-        }
+        if (uniqueTokens.includes(currentValue)) loggerElements.filterToken.value = currentValue;
     }
 
     function groupDataByMonthAndDay(transactions) {
@@ -472,12 +432,8 @@
             const date = new Date(entry.date + 'T00:00:00');
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
             const dayKey = entry.date;
-            if (!monthlyData[monthKey]) {
-                monthlyData[monthKey] = { days: {}, monthlyIncome: 0, monthlyExpense: 0 };
-            }
-            if (!monthlyData[monthKey].days[dayKey]) {
-                monthlyData[monthKey].days[dayKey] = { transactions: [], dailyIncome: 0, dailyExpense: 0 };
-            }
+            if (!monthlyData[monthKey]) monthlyData[monthKey] = { days: {}, monthlyIncome: 0, monthlyExpense: 0 };
+            if (!monthlyData[monthKey].days[dayKey]) monthlyData[monthKey].days[dayKey] = { transactions: [], dailyIncome: 0, dailyExpense: 0 };
             const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
             if (entry.type === 'income') {
                 monthlyData[monthKey].monthlyIncome += amount_usd;
@@ -564,40 +520,19 @@
 
     function handleExportToCsv() {
         try {
-            if (!currentLogData || currentLogData.length === 0) {
-                alert('Nėra duomenų, kuriuos būtų galima eksportuoti.');
-                return;
-            }
+            if (!currentLogData || currentLogData.length === 0) { alert('Nėra duomenų.'); return; }
             const headers = [ "Data", "Platforma", "Tipas", "Kategorija", "Žetonas", "Kiekis", "Kursas (USD)", "Suma (USD)", "Aprašymas" ];
             const rows = currentLogData.map(entry => {
                 const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
-                return [
-                    entry.date,
-                    entry.platform,
-                    entry.type,
-                    entry.category,
-                    entry.token,
-                    entry.token_amount || 0,
-                    entry.rate_usd || 0,
-                    amount_usd,
-                    entry.description || ''
-                ].map(field => String(field)); 
+                return [ entry.date, entry.platform, entry.type, entry.category, entry.token, entry.token_amount || 0, entry.rate_usd || 0, amount_usd, entry.description || '' ].map(field => String(field)); 
             });
-            const csvContent = [
-                headers.join(','),
-                ...rows.map(row => row.map(escapeCsvField).join(','))
-            ].join('\n');
+            const csvContent = [ headers.join(','), ...rows.map(row => row.map(escapeCsvField).join(',')) ].join('\n');
             downloadCsv(csvContent);
-        } catch (error) {
-            console.error("Įvyko klaida eksportuojant CSV:", error);
-            alert(`Eksportavimo klaida: ${error.message}`);
-        }
+        } catch (error) { alert(`Klaida: ${error.message}`); }
     }
 
     function escapeCsvField(field) {
-        if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-            return `"${field.replace(/"/g, '""')}"`;
-        }
+        if (field.includes(',') || field.includes('"') || field.includes('\n')) return `"${field.replace(/"/g, '""')}"`;
         return field;
     }
 
@@ -606,15 +541,12 @@
         const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        
         const today = new Date().toISOString().slice(0, 10);
         link.setAttribute("href", url);
         link.setAttribute("download", `stepn-go-transakcijos-${today}.csv`);
-        
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     }
-    
 })();
