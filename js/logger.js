@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Versija V1.2.1 - RLS + 10k Limit Fix)
+// Failas: js/logger.js (Versija V1.2.0 - RLS: Privatus režimas)
 
 (function() {
     'use strict';
@@ -208,7 +208,7 @@
         }
     }
 
-    // === 6. DUOMENŲ LOGIKA (SU PATAISYMU: RANGE FIX) ===
+    // === 6. DUOMENŲ LOGIKA (PATAISYTA PAGAL INSTRUKCIJAS) ===
     
     async function loadAndRenderLogTable() {
         const sb = getSupabase();
@@ -217,6 +217,7 @@
             return; 
         }
 
+        // KRITINIS PATAISYMAS: Tikrinti autentifikaciją
         const { data: { user } } = await sb.auth.getUser();
         
         if (!user) {
@@ -227,8 +228,9 @@
             return;
         }
 
-        console.log('✅ Prisijungęs vartotojas:', user.email);
+        console.log('✅ Prisijungęs vartotojas:', user.email, 'ID:', user.id);
 
+        // KRITINIS PATAISYMAS: Pridėti user_id filtrą
         let query = sb.from('transactions').select('*').eq('user_id', user.id);
         
         if (loggerElements.filterStartDate && loggerElements.filterStartDate.value) {
@@ -244,13 +246,9 @@
             query = query.eq('category', loggerElements.filterCategory.value);
         }
         
-        // --- PATAISYMAS ČIA ---
         query = query.order(loggerElements.filterSort.value, { 
             ascending: loggerElements.filterOrder.value === 'asc' 
-        })
-        .order('id', { ascending: false })
-        .range(0, 9999); // <--- NUIMAME 1000 RIBOJIMĄ!
-        // ----------------------
+        }).order('id', { ascending: false });
         
         const { data, error } = await query;
         
@@ -260,7 +258,7 @@
             return; 
         }
         
-        console.log(`📊 Rasta ${data ? data.length : 0} transakcijų`);
+        console.log(`📊 Rasta ${data ? data.length : 0} transakcijų vartotojui ${user.email}`);
         
         currentLogData = data || [];
         renderLogTable(currentLogData);
@@ -446,6 +444,8 @@
         // KRITINIS PATAISYMAS: Gauti user_id
         const { data: { user } } = await sb.auth.getUser();
         if (!user) throw new Error("Vartotojas neprisijungęs.");
+        
+        console.log('💾 Saugoma transakcija vartotojui:', user.email);
         
         loggerElements.logSubmitBtn.textContent = `Išsaugoma...`;
         
