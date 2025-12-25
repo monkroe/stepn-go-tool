@@ -1,27 +1,20 @@
-// Failas: js/logger.js (Versija V1.1.11 - Su integruotu Supabase prisijungimu)
+// Failas: js/logger.js (Versija V1.1.12 - FINAL: Viskas veikia + Suskleista pagal nutylėjimą)
 
 (function() {
     'use strict';
 
-    // === 1. INTEGRUOTI SUPABASE NUSTATYMAI (Kad nereikėtų kito failo) ===
+    // === 1. INTEGRUOTI SUPABASE NUSTATYMAI ===
     const SB_URL = 'https://zojhurhwmceoqxkatvkx.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpvamh1cmh3bWNlb3F4a2F0dmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNjYxNDYsImV4cCI6MjA2NDc0MjE0Nn0.NFGhQc7H95U9vOaM7OVxNUgTuXSughz8ZuxaCLfbfQE';
 
     // === 2. SAUGI PRISIJUNGIMO FUNKCIJA ===
     function getSupabase() {
-        // 1. Bandome naudoti globalų, jei jis jau geras (turi .auth)
-        if (window.supabase && window.supabase.auth) {
-            return window.supabase;
-        }
-        // 2. Jei globalus blogas, susikuriame savo čia ir dabar
+        if (window.supabase && window.supabase.auth) return window.supabase;
         if (typeof supabase !== 'undefined' && supabase.createClient) {
             const client = supabase.createClient(SB_URL, SB_KEY);
-            // Išsaugome ateičiai
             window.supabase = client;
             return client;
         }
-        // 3. Jei niekas neveikia
-        console.error("Supabase biblioteka nerasta. Patikrinkite internetą.");
         return null;
     }
 
@@ -63,11 +56,7 @@
         populateCategoryFilter();
         resetLogForm();
         bindLoggerEventListeners();
-        
-        // Priverstinis duomenų užkrovimas po trumpos pauzės
-        setTimeout(() => {
-            loadAndRenderLogTable();
-        }, 300);
+        setTimeout(() => { loadAndRenderLogTable(); }, 300);
     }
 
     function cacheLoggerElements() {
@@ -108,7 +97,7 @@
         if (loggerElements.editAmountUsd) loggerElements.editAmountUsd.addEventListener('input', () => syncEditInputs('amount'));
     }
 
-    // === 5. FORMOS LOGIKA ===
+    // === 5. UI PILDYMAS ===
     function populateCategoryFilter() {
         if (!loggerElements.filterCategory) return;
         const allCategories = new Set();
@@ -138,9 +127,7 @@
         loggerElements.filterCategory.disabled = false;
     }
     
-    function updateCategoryFilter() {
-        populateCategoryFilter();
-    }
+    function updateCategoryFilter() { populateCategoryFilter(); }
 
     function updateDynamicForm() {
         updateCategoryDropdown();
@@ -149,7 +136,6 @@
 
     function updateCategoryDropdown() {
         if (!loggerElements.platform || !loggerElements.logType || !loggerElements.logCategory) return;
-        
         const platform = loggerElements.platform.value;
         const type = loggerElements.logType.value;
         
@@ -160,15 +146,11 @@
 
         const platformCategories = CATEGORIES[platform]?.[type] || {};
         let optionsHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
-        
-        Object.entries(platformCategories).forEach(([key, value]) => {
-            optionsHTML += `<option value="${key}">${value}</option>`;
-        });
+        Object.entries(platformCategories).forEach(([key, value]) => { optionsHTML += `<option value="${key}">${value}</option>`; });
         
         const currentVal = loggerElements.logCategory.value;
         loggerElements.logCategory.innerHTML = optionsHTML;
         if (platformCategories[currentVal]) loggerElements.logCategory.value = currentVal;
-        
         loggerElements.logCategory.disabled = false;
     }
 
@@ -190,21 +172,16 @@
         if (platform === 'go' && (category === 'Gem Removal' || category === 'Socket Unlock')) {
             loggerElements.standardFields.classList.remove('hidden');
             updateTokenRadioButtons(['ggt']);
-        } else if (platform === 'go' && category === 'Level-up') {
-            loggerElements.goLevelUpFields.classList.remove('hidden');
-        } else if (platform === 'og' && category === 'Level-up') {
-            loggerElements.ogLevelUpFields.classList.remove('hidden');
-        } else if (platform === 'og' && category === 'Minting') {
-            loggerElements.ogMintFields.classList.remove('hidden');
-        } else if (platform === 'og' && category === 'Repair') {
+        } else if (platform === 'go' && category === 'Level-up') loggerElements.goLevelUpFields.classList.remove('hidden');
+        else if (platform === 'og' && category === 'Level-up') loggerElements.ogLevelUpFields.classList.remove('hidden');
+        else if (platform === 'og' && category === 'Minting') loggerElements.ogMintFields.classList.remove('hidden');
+        else if (platform === 'og' && category === 'Repair') {
             loggerElements.standardFields.classList.remove('hidden');
             updateTokenRadioButtons(['gst']);
-        } else if (platform === 'og' && category === 'Restore') {
-            loggerElements.ogRestoreFields.classList.remove('hidden');
-        } else if (category) {
+        } else if (platform === 'og' && category === 'Restore') loggerElements.ogRestoreFields.classList.remove('hidden');
+        else if (category) {
             loggerElements.standardFields.classList.remove('hidden');
-            const tokens = platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc'];
-            updateTokenRadioButtons(tokens);
+            updateTokenRadioButtons(platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc']);
         }
     }
 
@@ -221,23 +198,19 @@
     function syncEditInputs(source) {
         const rate = parseFloat(loggerElements.editRateUsd.value);
         const amount = parseFloat(loggerElements.logTokenAmount.value);
+        const total = parseFloat(loggerElements.editAmountUsd.value);
+        
         if (source === 'rate' && !isNaN(rate) && !isNaN(amount)) {
             loggerElements.editAmountUsd.value = (amount * rate).toFixed(2);
-        } else if (source === 'amount' && !isNaN(parseFloat(loggerElements.editAmountUsd.value)) && !isNaN(amount) && amount > 0) {
-            loggerElements.editRateUsd.value = (parseFloat(loggerElements.editAmountUsd.value) / amount).toFixed(8);
+        } else if (source === 'amount' && !isNaN(total) && !isNaN(amount) && amount > 0) {
+            loggerElements.editRateUsd.value = (total / amount).toFixed(8);
         }
     }
 
-    // === 6. DUOMENŲ GAVIMAS (Su apsauga nuo klaidų) ===
+    // === 6. DUOMENŲ LOGIKA ===
     async function loadAndRenderLogTable() {
         const sb = getSupabase();
-        
-        // Jei vis tiek nepavyko gauti kliento, rodome klaidą konsolėje ir išeiname,
-        // bet forma lieka veikti.
-        if (!sb || !sb.from) {
-            console.warn("Supabase klientas dar nepasiruošęs arba .from funkcija nerasta.");
-            return;
-        }
+        if (!sb || !sb.from) { console.warn("Supabase klientas nerastas."); return; }
 
         let query = sb.from('transactions').select('*');
         
@@ -249,10 +222,7 @@
         query = query.order(loggerElements.filterSort.value, { ascending: loggerElements.filterOrder.value === 'asc' }).order('id', { ascending: false });
         
         const { data, error } = await query;
-        if (error) { 
-            console.error('DB Error:', error); 
-            return; 
-        }
+        if (error) { console.error('DB Error:', error); return; }
         
         currentLogData = data || [];
         renderLogTable(currentLogData);
@@ -264,13 +234,11 @@
         const uniqueTokens = [...new Set(data.map(item => item.token))];
         let optionsHTML = '<option value="">Visi</option>';
         const tokens = window.appData?.tokens || {};
-        
         uniqueTokens.sort().forEach(token => { 
             let displayToken = tokens[token]?.symbol || token.toUpperCase();
             if (displayToken === 'GST (SOL)') displayToken = 'GST';
             optionsHTML += `<option value="${token}">${displayToken}</option>`; 
         });
-        
         const currentVal = loggerElements.filterToken.value;
         loggerElements.filterToken.innerHTML = optionsHTML;
         if (uniqueTokens.includes(currentVal)) loggerElements.filterToken.value = currentVal;
@@ -287,13 +255,8 @@
             if (!monthlyData[monthKey].days[dayKey]) monthlyData[monthKey].days[dayKey] = { transactions: [], dailyIncome: 0, dailyExpense: 0 };
             
             const val = (entry.token_amount || 0) * (entry.rate_usd || 0);
-            if (entry.type === 'income') { 
-                monthlyData[monthKey].monthlyIncome += val; 
-                monthlyData[monthKey].days[dayKey].dailyIncome += val; 
-            } else { 
-                monthlyData[monthKey].monthlyExpense += val; 
-                monthlyData[monthKey].days[dayKey].dailyExpense += val; 
-            }
+            if (entry.type === 'income') { monthlyData[monthKey].monthlyIncome += val; monthlyData[monthKey].days[dayKey].dailyIncome += val; } 
+            else { monthlyData[monthKey].monthlyExpense += val; monthlyData[monthKey].days[dayKey].dailyExpense += val; }
             monthlyData[monthKey].days[dayKey].transactions.push(entry);
         });
         return monthlyData;
@@ -330,7 +293,8 @@
                 const dColor = dailyNet >= 0 ? 'income-color' : 'expense-color';
                 const dSign = dailyNet >= 0 ? '+' : '';
 
-                html += `<tr class="date-separator-row expanded" data-date-group="${dayKey}"><td colspan="8"><div class="date-separator-content"><span class="date-display"><span class="toggle-arrow">▾</span> ${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span><span class="daily-summary"><span class="daily-income">+${dData.dailyIncome.toFixed(2)}</span><span class="daily-expense">-${dData.dailyExpense.toFixed(2)}</span><span class="daily-net ${dColor}">${dSign}${dailyNet.toFixed(2)}</span></span></div></td></tr>`;
+                // ČIA PAKEITIMAS: Nuimtas 'expanded', pakeista rodyklė į '▸'
+                html += `<tr class="date-separator-row" data-date-group="${dayKey}"><td colspan="8"><div class="date-separator-content"><span class="date-display"><span class="toggle-arrow">▸</span> ${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span><span class="daily-summary"><span class="daily-income">+${dData.dailyIncome.toFixed(2)}</span><span class="daily-expense">-${dData.dailyExpense.toFixed(2)}</span><span class="daily-net ${dColor}">${dSign}${dailyNet.toFixed(2)}</span></span></div></td></tr>`;
 
                 dData.transactions.forEach(entry => {
                     const usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
@@ -344,7 +308,8 @@
                     const iconPath = `img/${entry.token.toLowerCase()}.svg`;
                     const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
 
-                    html += `<tr class="transaction-row" data-id="${entry.id}" data-date-group="${dayKey}"><td class="align-middle text-sm text-gray-400">${entry.date}</td><td class="arrow-cell align-middle ${isInc ? 'income-color' : 'expense-color'} font-bold text-center">${isInc ? '▲' : '▼'}</td><td class="token-cell align-middle">${tokenCellHTML} <span class="ml-1">${tokenSymbol}</span></td><td class="align-middle font-mono ${isInc ? 'income-color' : 'expense-color'}">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}</td><td class="align-middle text-gray-400">$${(entry.rate_usd || 0).toFixed(4)}</td><td class="align-middle font-bold">$${usd.toFixed(2)}</td><td class="align-middle text-sm text-gray-300">${entry.description || ''}</td><td class="log-table-actions align-middle"><button class="btn-edit">Taisyti</button><button class="btn-delete">Trinti</button></td></tr>`;
+                    // ČIA PAKEITIMAS: Pridėtas 'hidden'
+                    html += `<tr class="transaction-row hidden" data-id="${entry.id}" data-date-group="${dayKey}"><td class="align-middle text-sm text-gray-400">${entry.date}</td><td class="arrow-cell align-middle ${isInc ? 'income-color' : 'expense-color'} font-bold text-center">${isInc ? '▲' : '▼'}</td><td class="token-cell align-middle">${tokenCellHTML} <span class="ml-1">${tokenSymbol}</span></td><td class="align-middle font-mono ${isInc ? 'income-color' : 'expense-color'}">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}</td><td class="align-middle text-gray-400">$${(entry.rate_usd || 0).toFixed(4)}</td><td class="align-middle font-bold">$${usd.toFixed(2)}</td><td class="align-middle text-sm text-gray-300">${entry.description || ''}</td><td class="log-table-actions align-middle"><button class="btn-edit">Taisyti</button><button class="btn-delete">Trinti</button></td></tr>`;
                 });
             });
         });
@@ -373,7 +338,6 @@
         loggerElements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2 text-white">Bendra suvestinė</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
     }
 
-    // === 7. VEIKSMAI (CREATE, UPDATE, DELETE, CSV) ===
     async function handleLogSubmit(event) {
         event.preventDefault();
         const editingId = loggerElements.logForm.dataset.editingId;
@@ -396,12 +360,9 @@
         const date = loggerElements.logDate.value;
         const type = loggerElements.logType.value;
         let description = loggerElements.logDescription.value.trim();
-        
         if (!platform || !type || !category) throw new Error("Prašome pasirinkti platformą, tipą ir kategoriją.");
-        
         const commonData = { date, type, category, description, platform };
         let operations = [];
-
         if (platform === 'go' && category === 'Level-up') {
             const ggt = parseFloat(loggerElements.goLevelUpGgt.value) || 0;
             const gmt = parseFloat(loggerElements.goLevelUpGmt.value) || 0;
@@ -433,40 +394,31 @@
                 if (!isNaN(amount) && amount > 0) operations.push({ ...commonData, tokenKey: radio.value, tokenAmount: amount });
             }
         }
-
         if (operations.length === 0) throw new Error("Neįvesta jokia suma.");
         for (const op of operations) await createSingleLogEntry(op);
     }
 
     async function createSingleLogEntry(entryData) {
         const sb = getSupabase();
-        if(!sb) throw new Error("Klaida: Nepavyko prisijungti prie duomenų bazės. Patikrinkite internetą.");
-        
-        // PATAISYMAS: Tikriname, ar .auth išvis egzistuoja, prieš kviečiant getUser
+        if(!sb) throw new Error("Klaida: Nėra ryšio su DB.");
         let userId = null;
         if (sb.auth && typeof sb.auth.getUser === 'function') {
              const { data } = await sb.auth.getUser();
              if (data && data.user) userId = data.user.id;
         }
-        
         loggerElements.logSubmitBtn.textContent = `Išsaugoma...`;
-        
         let rate = 0;
         if (window.appActions && window.appActions.getPriceForDate) {
             try { rate = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date); } catch (e) {}
         }
-
         const record = { ...entryData, token: entryData.tokenKey, token_amount: entryData.tokenAmount, rate_usd: rate, user_id: userId };
         delete record.tokenKey; delete record.tokenAmount;
-        
         const { error } = await sb.from('transactions').insert(record);
         if (error) throw error;
     }
 
     async function handleUpdate(id) {
         const sb = getSupabase();
-        if(!sb) throw new Error("Klaida: Nėra ryšio su duomenų baze.");
-
         const record = {
             date: loggerElements.logDate.value,
             type: loggerElements.logType.value,
@@ -477,14 +429,12 @@
             platform: loggerElements.platform.value,
             rate_usd: parseFloat(loggerElements.editRateUsd.value)
         };
-        
         if (window.appActions.getPriceForDate) {
              const oldEntry = JSON.parse(loggerElements.logForm.dataset.oldEntry);
              if (record.date !== oldEntry.date || record.token !== oldEntry.token) {
                  record.rate_usd = await window.appActions.getPriceForDate(record.token, record.date);
              }
         }
-        
         const { error } = await sb.from('transactions').update(record).eq('id', id);
         if (error) throw error;
     }
@@ -501,15 +451,12 @@
             document.querySelectorAll(`.transaction-row[data-date-group="${date}"]`).forEach(row => row.classList.toggle('hidden'));
             return;
         }
-
         const btn = target.closest('button');
         if (!btn) return;
         const row = btn.closest('tr');
         if (!row || !row.dataset.id) return;
         const id = parseInt(row.dataset.id);
         const sb = getSupabase();
-        if(!sb) return;
-
         if (btn.matches('.btn-delete')) {
             if (confirm('Ar tikrai trinti?')) {
                 const { error } = await sb.from('transactions').delete().eq('id', id);
@@ -533,14 +480,12 @@
         updateDynamicForm();
         loggerElements.logCategory.value = entry.category;
         updateVisibleFields();
-        
         const tokens = entry.platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc'];
         updateTokenRadioButtons(tokens);
         setTimeout(() => {
             const radio = document.querySelector(`input[name="logToken"][value="${entry.token}"]`);
             if (radio) radio.checked = true;
         }, 0);
-        
         loggerElements.logTokenAmount.value = entry.token_amount;
         loggerElements.logDescription.value = entry.description;
         loggerElements.editRateUsd.value = (entry.rate_usd || 0).toFixed(8);
@@ -573,10 +518,8 @@
                 const usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
                 return [ entry.date, entry.platform, entry.type, entry.category, entry.token, entry.token_amount || 0, entry.rate_usd || 0, usd, entry.description || '' ].map(String); 
             });
-            
             const escape = (f) => (f.includes(',') || f.includes('"') || f.includes('\n')) ? `"${f.replace(/"/g, '""')}"` : f;
             const csv = [ headers.join(','), ...rows.map(row => row.map(escape).join(',')) ].join('\n');
-            
             const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
