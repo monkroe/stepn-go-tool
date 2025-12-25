@@ -1,19 +1,55 @@
-// Failas: js/logger.js (Galutinė versija V1.0.11 - Pataisyta ir Optimizuota)
+// Failas: js/logger.js (V1.1.0 - Pilnos kategorijos + Saugus Supabase)
 
 (function() {
     'use strict';
     
-    // Naudojame globalų supabase objektą
+    // Naudojame globalų supabase objektą saugiai
     const supabase = window.supabase;
 
+    // === PILNAS KATEGORIJŲ SĄRAŠAS (Iš V1.0.10) ===
     const CATEGORIES = {
         go: {
-            income: { "GGT Earnings": "GGT Uždarbis", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
-            expense: { "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" }
+            income: { 
+                "GGT Earnings": "GGT uždarbis", 
+                "Sneaker Rental": "Sportbačių nuoma", 
+                "Sneaker Sale": "Sportbačių pardavimas", 
+                "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", 
+                "Gem Sale": "Brangakmenių pardavimas", 
+                "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas", 
+                "Other": "Kita" 
+            },
+            expense: { 
+                "Level-up": "Lygio kėlimas", 
+                "Minting": "Mintinimas", 
+                "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", 
+                "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas", 
+                "Sneaker Purchase": "Sportbačių pirkimas", 
+                "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", 
+                "Gem Purchase": "Brangakmenių pirkimas", 
+                "Mystery Box Slot Purchase": "Papildomų 'Mystery Box' vietų pirkimas", 
+                "Other": "Kita" 
+            }
         },
         og: {
-            income: { "GST Earnings": "GST Uždarbis", "Sneaker Sale": "Sportbačio pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Other": "Kita" },
-            expense: { "Level-up": "Lygio kėlimas", "Minting": "Mintinimas", "Mystery Box opening": "Dėžutės atidarymas", "Other": "Kita" }
+            income: { 
+                "GST Earnings": "GST uždarbis", 
+                "Sneaker Sale": "Sportbačio pardavimas", 
+                "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", 
+                "Gem Sale": "Brangakmenių pardavimas", 
+                "Scroll Sale": "'Minting Scroll' pardavimas", 
+                "Other": "Kita" 
+            },
+            expense: { 
+                "Repair": "Taisymas (HP)", 
+                "Level-up": "Lygio kėlimas", 
+                "Mystery Box opening": "Dėžutės atidarymas", 
+                "Restore": "Atributų atkūrimas", 
+                "Minting": "Mintinimas", 
+                "Sneaker Purchase": "Sportbačių pirkimas", 
+                "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", 
+                "Scroll Purchase": "'Minting Scroll' pirkimas", 
+                "Other": "Kita" 
+            }
         }
     };
 
@@ -27,15 +63,35 @@
 
     function initLogger() {
         cacheLoggerElements();
-        resetLogForm();
-        bindLoggerEventListeners();
-        // Įsitikiname, kad vartotojas prisijungęs prieš kraunant duomenis
-        setTimeout(loadAndRenderLogTable, 500); 
+        // Palaukiame šiek tiek, kad script.js spėtų užkrauti tokenus
+        setTimeout(() => {
+            populateCategoryFilter(); // Užpildome filtrą
+            resetLogForm();
+            bindLoggerEventListeners();
+            loadAndRenderLogTable();
+        }, 300);
     }
 
     function cacheLoggerElements() {
-        const ids = [ 'logForm', 'platform', 'logDate', 'logType', 'logCategory', 'logDescription', 'logSubmitBtn', 'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields', 'logTokenRadioGroup', 'logTokenAmount', 'goLevelUpGgt', 'goLevelUpGmt', 'ogLevelUpGst', 'ogLevelUpGmt', 'ogMintGst', 'ogMintGmt', 'ogMintScrolls', 'editRateUsd', 'editAmountUsd', 'logTableBody', 'summaryContainer', 'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn', 'exportCsvBtn' ];
-        ids.forEach(id => { if(document.getElementById(id)) loggerElements[id] = document.getElementById(id); });
+        const ids = [ 
+            'logForm', 'platform', 'logDate', 'logType', 'logCategory', 'logDescription', 'logSubmitBtn', 
+            'standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'ogRestoreFields', 'editFields', 
+            'logTokenRadioGroup', 'logTokenAmount', 
+            'goLevelUpGgt', 'goLevelUpGmt', 
+            'ogLevelUpGst', 'ogLevelUpGmt', 
+            'ogMintGst', 'ogMintGmt', 'ogMintScrollsCost',
+            'ogRestoreGst', 'ogRestoreGmt', 'ogRestoreGemsGmt',
+            'editRateUsd', 'editAmountUsd', 
+            'logTableBody', 'summaryContainer', 
+            'filterStartDate', 'filterEndDate', 'filterToken', 'filterSort', 'filterOrder', 'filterBtn', 'exportCsvBtn',
+            'filterCategory'
+        ];
+        ids.forEach(id => { 
+            const element = document.getElementById(id);
+            if (element) {
+                loggerElements[id] = element;
+            }
+        });
     }
 
     function bindLoggerEventListeners() {
@@ -43,11 +99,62 @@
         if (loggerElements.logTableBody) loggerElements.logTableBody.addEventListener('click', handleLogTableClick);
         if (loggerElements.filterBtn) loggerElements.filterBtn.addEventListener('click', loadAndRenderLogTable);
         if (loggerElements.exportCsvBtn) loggerElements.exportCsvBtn.addEventListener('click', handleExportToCsv);
-        if (loggerElements.platform) loggerElements.platform.addEventListener('change', updateDynamicForm);
+        if (loggerElements.platform) {
+            loggerElements.platform.addEventListener('change', () => {
+                updateDynamicForm();
+                updateCategoryFilter();
+            });
+        }
         if (loggerElements.logType) loggerElements.logType.addEventListener('change', updateDynamicForm);
         if (loggerElements.logCategory) loggerElements.logCategory.addEventListener('change', updateDynamicForm);
         if (loggerElements.editRateUsd) loggerElements.editRateUsd.addEventListener('input', () => syncEditInputs('rate'));
         if (loggerElements.editAmountUsd) loggerElements.editAmountUsd.addEventListener('input', () => syncEditInputs('amount'));
+    }
+
+    function populateCategoryFilter() {
+        if (!loggerElements.filterCategory || !loggerElements.platform) return;
+        
+        const reverseCategoryMap = {};
+        const allCategories = new Set();
+        
+        // Funkcija surinkti kategorijas
+        const collectCats = (plat) => {
+            if (!CATEGORIES[plat]) return;
+            ['income', 'expense'].forEach(type => {
+                if (CATEGORIES[plat][type]) {
+                    Object.entries(CATEGORIES[plat][type]).forEach(([key, value]) => {
+                        allCategories.add(value); // Pridedame lietuvišką pavadinimą
+                        reverseCategoryMap[value] = key; // Saugome ryšį su raktu
+                    });
+                }
+            });
+        };
+
+        const currentPlat = loggerElements.platform.value;
+        if (currentPlat) {
+            collectCats(currentPlat);
+            loggerElements.filterCategory.disabled = false;
+        } else {
+            // Jei nepasirinkta, rodom visas
+            collectCats('go');
+            collectCats('og');
+            // loggerElements.filterCategory.disabled = true; // Leidžiam filtruoti net nepasirinkus platformos
+        }
+        
+        const sortedCategories = Array.from(allCategories).sort();
+
+        let optionsHTML = `<option value="">Visos</option>`;
+        sortedCategories.forEach(cat => {
+            const key = reverseCategoryMap[cat] || cat;
+            optionsHTML += `<option value="${key}">${cat}</option>`;
+        });
+
+        loggerElements.filterCategory.innerHTML = optionsHTML;
+    }
+    
+    // Atnaujinam filtrą kai keičiasi platforma formoje (nebūtina, bet patogu)
+    function updateCategoryFilter() {
+        populateCategoryFilter();
     }
 
     async function handleLogSubmit(event) {
@@ -73,9 +180,12 @@
         const date = loggerElements.logDate.value;
         const type = loggerElements.logType.value;
         let description = loggerElements.logDescription.value.trim();
+        
         if (!platform || !type || !category) throw new Error("Prašome pasirinkti platformą, tipą ir kategoriją.");
+        
         const commonData = { date, type, category, description, platform };
         let operations = [];
+
         if (platform === 'go' && category === 'Level-up') {
             const ggt = parseFloat(loggerElements.goLevelUpGgt.value) || 0;
             const gmt = parseFloat(loggerElements.goLevelUpGmt.value) || 0;
@@ -89,19 +199,34 @@
         } else if (platform === 'og' && category === 'Minting') {
             const gst = parseFloat(loggerElements.ogMintGst.value) || 0;
             const gmt = parseFloat(loggerElements.ogMintGmt.value) || 0;
-            const scrolls = parseInt(loggerElements.ogMintScrolls.value) || 0;
-            let mintDesc = description;
-            if (scrolls > 0) mintDesc += ` (Panaudota ${scrolls} Minting Scrolls)`;
-            if (gst > 0) operations.push({ ...commonData, description: mintDesc, tokenKey: 'gst', tokenAmount: gst });
-            if (gmt > 0) operations.push({ ...commonData, description: mintDesc, tokenKey: 'gmt', tokenAmount: gmt });
-        } else {
-            const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
-            if (!selectedTokenRadio) throw new Error("Prašome pasirinkti žetoną.");
-            const tokenAmount = parseFloat(loggerElements.logTokenAmount.value);
-            if (isNaN(tokenAmount) || tokenAmount <= 0) throw new Error("Prašome įvesti teigiamą sumą.");
-            operations.push({ ...commonData, tokenKey: selectedTokenRadio.value, tokenAmount });
+            const scrollsCost = parseFloat(loggerElements.ogMintScrollsCost.value) || 0; // Pataisyta ID
+            
+            if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
+            if (gmt > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: gmt });
+            if (scrollsCost > 0) operations.push({ ...commonData, description: description ? description + " (Scrolls)" : "(Scrolls Cost)", tokenKey: 'gmt', tokenAmount: scrollsCost });
+        } else if (platform === 'og' && category === 'Restore') {
+            const gst = parseFloat(loggerElements.ogRestoreGst.value) || 0;
+            const gmtDirect = parseFloat(loggerElements.ogRestoreGmt.value) || 0;
+            const gmtGems = parseFloat(loggerElements.ogRestoreGemsGmt.value) || 0;
+            
+            if (gst > 0) operations.push({ ...commonData, tokenKey: 'gst', tokenAmount: gst });
+            if (gmtDirect > 0) operations.push({ ...commonData, tokenKey: 'gmt', tokenAmount: gmtDirect });
+            if (gmtGems > 0) operations.push({ ...commonData, description: description ? description + " (Gems)" : "(Gems Cost)", tokenKey: 'gmt', tokenAmount: gmtGems });
         }
-        if (operations.length === 0) throw new Error("Neįvesta jokia suma.");
+        else {
+            const selectedTokenRadio = document.querySelector('input[name="logToken"]:checked');
+            if (selectedTokenRadio) {
+                const tokenAmount = parseFloat(loggerElements.logTokenAmount.value);
+                if (!isNaN(tokenAmount) && tokenAmount > 0) {
+                    operations.push({ ...commonData, tokenKey: selectedTokenRadio.value, tokenAmount });
+                }
+            }
+        }
+
+        if (operations.length === 0) {
+            throw new Error("Neįvesta jokia suma arba suma yra nulinė.");
+        }
+        
         for (const op of operations) {
             await createSingleLogEntry(op);
         }
@@ -110,51 +235,112 @@
     async function createSingleLogEntry(entryData) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Vartotojas neprisijungęs.");
-        loggerElements.logSubmitBtn.textContent = `Išsaugoma ${entryData.tokenKey.toUpperCase()}...`;
-        const rate_usd = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date);
-        const record = { ...entryData, token: entryData.tokenKey, token_amount: entryData.tokenAmount, rate_usd, user_id: user.id };
-        delete record.tokenKey; delete record.tokenAmount;
+        
+        if (loggerElements.logSubmitBtn) {
+            loggerElements.logSubmitBtn.textContent = `Išsaugoma ${entryData.tokenKey.toUpperCase()}...`;
+        }
+        
+        // Pataisymas: Jei getPriceForDate nėra, naudojam 0 (kad nenulūžtų)
+        let rate_usd = 0;
+        if (window.appActions && window.appActions.getPriceForDate) {
+            try {
+                rate_usd = await window.appActions.getPriceForDate(entryData.tokenKey, entryData.date);
+            } catch (e) {
+                console.warn("Nepavyko gauti kainos:", e);
+            }
+        }
+
+        const record = { 
+            ...entryData, 
+            token: entryData.tokenKey, 
+            token_amount: entryData.tokenAmount, 
+            rate_usd: rate_usd, 
+            user_id: user.id 
+        };
+        
+        // Išvalome pagalbinius laukus
+        delete record.tokenKey;
+        delete record.tokenAmount;
+        
         const { error } = await supabase.from('transactions').insert(record);
         if (error) throw error;
     }
 
     async function handleUpdate(id) {
+        const selectedRadio = document.querySelector('input[name="logToken"]:checked');
+        const tokenKey = selectedRadio ? selectedRadio.value : '';
+        
         const record = {
             date: loggerElements.logDate.value,
             type: loggerElements.logType.value,
-            token: document.querySelector('input[name="logToken"]:checked').value,
+            token: tokenKey,
             token_amount: parseFloat(loggerElements.logTokenAmount.value),
             category: loggerElements.logCategory.value,
             description: loggerElements.logDescription.value.trim(),
             platform: loggerElements.platform.value,
             rate_usd: parseFloat(loggerElements.editRateUsd.value)
         };
-        const oldEntry = JSON.parse(loggerElements.logForm.dataset.oldEntry);
-        if (record.date !== oldEntry.date || record.token !== oldEntry.token) {
-            loggerElements.logSubmitBtn.textContent = 'Gaunamas kursas...';
-            record.rate_usd = await window.appActions.getPriceForDate(record.token, record.date);
+        
+        // Jei keičiasi data ar tokenas, atnaujinam kursą
+        if (loggerElements.logForm.dataset.oldEntry) {
+            const oldEntry = JSON.parse(loggerElements.logForm.dataset.oldEntry);
+            if (record.date !== oldEntry.date || record.token !== oldEntry.token) {
+                loggerElements.logSubmitBtn.textContent = 'Gaunamas kursas...';
+                if (window.appActions.getPriceForDate) {
+                    record.rate_usd = await window.appActions.getPriceForDate(record.token, record.date);
+                }
+            }
         }
+        
         const { error } = await supabase.from('transactions').update(record).eq('id', id);
         if (error) throw error;
     }
 
     async function handleLogTableClick(event) {
-        const target = event.target.closest('button');
-        if (!target) return;
-        const row = target.closest('tr');
-        if (!row || !row.dataset.id) return;
-        const entryId = parseInt(row.dataset.id);
-        if (target.matches('.btn-delete')) {
-            if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
-                const { error } = await supabase.from('transactions').delete().eq('id', entryId);
-                if (error) alert(`Klaida trinant: ${error.message}`);
-                else await loadAndRenderLogTable();
-            }
-        } else if (target.matches('.btn-edit')) {
-            const { data, error } = await supabase.from('transactions').select().eq('id', entryId).single();
-            if (error) { alert(`Klaida gaunant įrašą: ${error.message}`); return; }
-            startEditEntry(data);
+        const target = event.target;
+        // Pirmiausia tikrinam accordion
+        const separatorRow = target.closest('.date-separator-row');
+        if (separatorRow) {
+            handleAccordionToggle(separatorRow);
+            return;
         }
+
+        const actionButton = target.closest('button');
+        if (actionButton) {
+            const row = actionButton.closest('tr');
+            if (!row || !row.dataset.id) return;
+            const entryId = parseInt(row.dataset.id);
+
+            if (actionButton.matches('.btn-delete')) {
+                if (confirm('Ar tikrai norite ištrinti šį įrašą?')) {
+                    const { error } = await supabase.from('transactions').delete().eq('id', entryId);
+                    if (error) alert(`Klaida trinant: ${error.message}`);
+                    else await loadAndRenderLogTable();
+                }
+            } else if (actionButton.matches('.btn-edit')) {
+                const { data, error } = await supabase.from('transactions').select().eq('id', entryId).single();
+                if (error) { alert(`Klaida gaunant įrašą: ${error.message}`); return; }
+                startEditEntry(data);
+            }
+        }
+    }
+    
+    function handleAccordionToggle(separatorRow) {
+        const date = separatorRow.dataset.dateGroup;
+        if (!date) return;
+        
+        // Toggle klasę (CSS gali pridėti animaciją)
+        separatorRow.classList.toggle('expanded');
+        
+        // Rasti ir apversti rodyklę
+        const arrow = separatorRow.querySelector('.toggle-arrow');
+        if (arrow) arrow.textContent = separatorRow.classList.contains('expanded') ? '▾' : '▸';
+
+        // Rasti visas tos dienos eilutes ir perjungti hidden
+        const transactionRows = document.querySelectorAll(`.transaction-row[data-date-group="${date}"]`);
+        transactionRows.forEach(row => {
+            row.classList.toggle('hidden');
+        });
     }
 
     function startEditEntry(entry) {
@@ -164,17 +350,30 @@
         loggerElements.platform.value = entry.platform || 'go';
         loggerElements.logDate.value = entry.date;
         loggerElements.logType.value = entry.type;
-        updateDynamicForm();
+        
+        // Atnaujinam kategorijas pagal platformą/tipą
+        updateCategoryDropdown();
         loggerElements.logCategory.value = entry.category;
+        
         updateVisibleFields();
+        
+        // Nustatom tokenus
         const tokensForPlatform = entry.platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc'];
         updateTokenRadioButtons(tokensForPlatform);
-        const radioToSelect = document.querySelector(`input[name="logToken"][value="${entry.token}"]`);
-        if (radioToSelect) radioToSelect.checked = true;
+        
+        // Pažymim tokeną (šiek tiek palaukiam, kad DOM atsinaujintų)
+        setTimeout(() => {
+            const radioToSelect = document.querySelector(`input[name="logToken"][value="${entry.token}"]`);
+            if (radioToSelect) radioToSelect.checked = true;
+        }, 0);
+        
         loggerElements.logTokenAmount.value = entry.token_amount;
-        loggerElements.logDescription.value = entry.description;
-        loggerElements.editRateUsd.value = (entry.rate_usd || 0).toFixed(8);
-        loggerElements.editAmountUsd.value = ((entry.rate_usd || 0) * (entry.token_amount || 0)).toFixed(2);
+        loggerElements.logDescription.value = entry.description || '';
+        
+        // Užpildom edit laukus
+        if (loggerElements.editRateUsd) loggerElements.editRateUsd.value = (entry.rate_usd || 0).toFixed(8);
+        if (loggerElements.editAmountUsd) loggerElements.editAmountUsd.value = ((entry.rate_usd || 0) * (entry.token_amount || 0)).toFixed(2);
+        
         loggerElements.logSubmitBtn.textContent = 'Atnaujinti įrašą';
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -184,12 +383,16 @@
             loggerElements.logForm.reset();
             delete loggerElements.logForm.dataset.editingId;
             delete loggerElements.logForm.dataset.oldEntry;
-            loggerElements.platform.value = "";
-            loggerElements.logType.value = "";
+            
+            // Nenustatome platformos į tuščią, kad liktų paskutinė pasirinkta (patogiau)
+            // loggerElements.platform.value = ""; 
+            
             updateDynamicForm();
+            
             const today = new Date();
             today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
             loggerElements.logDate.value = today.toISOString().split('T')[0];
+            
             loggerElements.logSubmitBtn.textContent = 'Pridėti įrašą';
             loggerElements.logSubmitBtn.disabled = false;
         }
@@ -202,15 +405,32 @@
 
     function updateCategoryDropdown() {
         if (!loggerElements.platform || !loggerElements.logType || !loggerElements.logCategory) return;
+        
         const platform = loggerElements.platform.value;
         const type = loggerElements.logType.value;
+        
+        // Jei platforma ar tipas nepasirinkti, išvalom kategorijas
+        if (!platform || !type) {
+            loggerElements.logCategory.innerHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
+            return;
+        }
+
         const platformCategories = CATEGORIES[platform]?.[type] || {};
-        const currentCategory = loggerElements.logCategory.value;
+        const options = Object.entries(platformCategories);
+        
         let optionsHTML = `<option value="" disabled selected>Pasirinkite kategoriją...</option>`;
-        optionsHTML += Object.entries(platformCategories).map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
+        optionsHTML += options.map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
+        
+        // Išsaugom seną reikšmę, jei ji vis dar validi
+        const currentCategory = loggerElements.logCategory.value;
         loggerElements.logCategory.innerHTML = optionsHTML;
-        if (platformCategories[currentCategory]) loggerElements.logCategory.value = currentCategory;
-        else loggerElements.logCategory.value = "";
+        
+        if (platformCategories[currentCategory]) {
+            loggerElements.logCategory.value = currentCategory;
+        } else {
+            loggerElements.logCategory.value = "";
+        }
+        
         loggerElements.logCategory.disabled = Object.keys(platformCategories).length === 0;
     }
 
@@ -218,30 +438,51 @@
         if (!loggerElements.platform || !loggerElements.logCategory) return;
         const platform = loggerElements.platform.value;
         const category = loggerElements.logCategory.value;
-        ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'editFields'].forEach(id => { if (loggerElements[id]) loggerElements[id].classList.add('hidden'); });
+        
+        ['standardFields', 'goLevelUpFields', 'ogLevelUpFields', 'ogMintFields', 'ogRestoreFields', 'editFields'].forEach(id => { 
+            const element = loggerElements[id];
+            if (element) {
+                element.classList.add('hidden'); 
+            }
+        });
+
         const isEditing = !!loggerElements.logForm.dataset.editingId;
         if (isEditing) {
             loggerElements.standardFields.classList.remove('hidden');
             loggerElements.editFields.classList.remove('hidden');
             return;
         }
-        if (platform === 'go' && category === 'Level-up') loggerElements.goLevelUpFields.classList.remove('hidden');
-        else if (platform === 'go' && category === 'Minting') {
+
+        if (platform === 'go' && category === 'Level-up') {
+            loggerElements.goLevelUpFields.classList.remove('hidden');
+        } else if (platform === 'og' && category === 'Level-up') {
+            loggerElements.ogLevelUpFields.classList.remove('hidden');
+        } else if (platform === 'og' && category === 'Minting') {
+            loggerElements.ogMintFields.classList.remove('hidden');
+        } else if (platform === 'og' && category === 'Repair') {
             loggerElements.standardFields.classList.remove('hidden');
-            updateTokenRadioButtons(['ggt']);
-        } else if (platform === 'og' && category === 'Level-up') loggerElements.ogLevelUpFields.classList.remove('hidden');
-        else if (platform === 'og' && category === 'Minting') loggerElements.ogMintFields.classList.remove('hidden');
-        else if (category) {
+            updateTokenRadioButtons(['gst']);
+        } else if (platform === 'og' && category === 'Restore') {
+            loggerElements.ogRestoreFields.classList.remove('hidden');
+        } else if (category) {
             loggerElements.standardFields.classList.remove('hidden');
-            updateTokenRadioButtons(platform === 'go' ? ['ggt', 'gmt', 'usdc'] : ['gst', 'gmt', 'sol', 'usdc']);
+            let tokensForPlatform = ['gmt', 'sol', 'usdc'];
+            if (platform === 'go') {
+                tokensForPlatform = ['ggt', 'gmt', 'usdc'];
+            } else if (platform === 'og') {
+                tokensForPlatform = ['gst', 'gmt', 'sol', 'usdc'];
+            }
+            updateTokenRadioButtons(tokensForPlatform);
         }
     }
 
     function updateTokenRadioButtons(tokensToShow) {
         if (!loggerElements.logTokenRadioGroup) return;
-        const tokens = window.appData.tokens;
+        const tokens = window.appData?.tokens || {};
+        
         loggerElements.logTokenRadioGroup.innerHTML = tokensToShow.map((key, index) => {
             const token = tokens[key];
+            if (!token) return ''; // Apsauga jei tokenas nerastas
             return `<label class="radio-label"><span><img src="${token.logo}" alt="${token.symbol}" class="token-logo">${token.symbol}</span><input type="radio" name="logToken" value="${key}" ${index === 0 ? 'checked' : ''}><span class="radio-custom-dot"></span></label>`;
         }).join('');
     }
@@ -250,8 +491,12 @@
         const rate = parseFloat(loggerElements.editRateUsd.value);
         const total = parseFloat(loggerElements.editAmountUsd.value);
         const amount = parseFloat(loggerElements.logTokenAmount.value);
-        if (source === 'rate' && !isNaN(rate) && !isNaN(amount)) loggerElements.editAmountUsd.value = (amount * rate).toFixed(2);
-        else if (source === 'amount' && !isNaN(total) && !isNaN(amount) && amount > 0) loggerElements.editRateUsd.value = (total / amount).toFixed(8);
+        
+        if (source === 'rate' && !isNaN(rate) && !isNaN(amount)) {
+            loggerElements.editAmountUsd.value = (amount * rate).toFixed(2);
+        } else if (source === 'amount' && !isNaN(total) && !isNaN(amount) && amount > 0) {
+            loggerElements.editRateUsd.value = (total / amount).toFixed(8);
+        }
     }
     
     async function loadAndRenderLogTable() {
@@ -259,33 +504,45 @@
         if (!user) {
             currentLogData = [];
             renderLogTable(currentLogData);
-            populateFilterDropdowns(currentLogData);
             return;
         }
+        
         let query = supabase.from('transactions').select('*').eq('user_id', user.id);
+        
         if (loggerElements.filterStartDate.value) query = query.gte('date', loggerElements.filterStartDate.value);
         if (loggerElements.filterEndDate.value) query = query.lte('date', loggerElements.filterEndDate.value);
         if (loggerElements.filterToken.value) query = query.eq('token', loggerElements.filterToken.value);
+        if (loggerElements.filterCategory.value) query = query.eq('category', loggerElements.filterCategory.value);
+        
         query = query.order(loggerElements.filterSort.value, { ascending: loggerElements.filterOrder.value === 'asc' }).order('id', { ascending: false });
+        
         const { data, error } = await query;
-        if (error) { console.error('Klaida gaunant duomenis:', error); return; }
+        if (error) { 
+            console.error('Klaida gaunant duomenis:', error); 
+            return; 
+        }
         
         currentLogData = data || [];
         renderLogTable(currentLogData);
-        populateFilterDropdowns(currentLogData);
+        populateFilterDropdowns(currentLogData); // Atnaujinam žetonų filtrą
     }
     
     function populateFilterDropdowns(data) {
         if (!loggerElements.filterToken) return;
         const uniqueTokens = [...new Set(data.map(item => item.token))];
         let optionsHTML = '<option value="">Visi</option>';
+        
+        const tokens = window.appData?.tokens || {};
+        
         uniqueTokens.sort().forEach(token => { 
-            let displayToken = window.appData.tokens[token]?.symbol || token.toUpperCase();
+            let displayToken = tokens[token]?.symbol || token.toUpperCase();
             if (displayToken === 'GST (SOL)') {
                 displayToken = 'GST';
             }
             optionsHTML += `<option value="${token}">${displayToken}</option>`; 
         });
+        
+        // Išsaugom pasirinkimą
         const currentValue = loggerElements.filterToken.value;
         loggerElements.filterToken.innerHTML = optionsHTML;
         if (uniqueTokens.includes(currentValue)) {
@@ -293,96 +550,136 @@
         }
     }
 
-    function groupTransactionsByDate(transactions) {
-        return transactions.reduce((acc, entry) => {
-            const date = entry.date;
-            if (!acc[date]) {
-                acc[date] = {
-                    transactions: [],
-                    dailyIncome: 0,
-                    dailyExpense: 0
-                };
+    function groupDataByMonthAndDay(transactions) {
+        const monthlyData = {};
+        transactions.forEach(entry => {
+            const date = new Date(entry.date + 'T00:00:00');
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const dayKey = entry.date;
+            
+            if (!monthlyData[monthKey]) {
+                monthlyData[monthKey] = { days: {}, monthlyIncome: 0, monthlyExpense: 0 };
             }
+            if (!monthlyData[monthKey].days[dayKey]) {
+                monthlyData[monthKey].days[dayKey] = { transactions: [], dailyIncome: 0, dailyExpense: 0 };
+            }
+            
             const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
             if (entry.type === 'income') {
-                acc[date].dailyIncome += amount_usd;
+                monthlyData[monthKey].monthlyIncome += amount_usd;
+                monthlyData[monthKey].days[dayKey].dailyIncome += amount_usd;
             } else {
-                acc[date].dailyExpense += amount_usd;
+                monthlyData[monthKey].monthlyExpense += amount_usd;
+                monthlyData[monthKey].days[dayKey].dailyExpense += amount_usd;
             }
-            acc[date].transactions.push(entry);
-            return acc;
-        }, {});
+            monthlyData[monthKey].days[dayKey].transactions.push(entry);
+        });
+        return monthlyData;
     }
 
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
-        loggerElements.logTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Kraunama...</td></tr>';
         
         if (!data || data.length === 0) {
-            loggerElements.logTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4">Įrašų nerasta.</td></tr>`;
+            loggerElements.logTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">Įrašų nerasta.</td></tr>`;
             renderSummary(0, 0, {});
             return;
         }
 
-        const groupedData = groupTransactionsByDate(data);
-        const dates = Object.keys(groupedData).sort().reverse(); // Sort dates descending
-
+        const groupedData = groupDataByMonthAndDay(data);
+        const months = Object.keys(groupedData).sort().reverse();
+        
         let totalIncomeUSD = 0, totalExpenseUSD = 0;
         const tokenBalances = {};
         let finalHTML = '';
 
-        dates.forEach(date => {
-            const group = groupedData[date];
-            const displayDate = new Date(date + 'T00:00:00');
-            const dailyNet = group.dailyIncome - group.dailyExpense;
-            const netColorClass = dailyNet >= 0 ? 'income-color' : 'expense-color';
-            const netSign = dailyNet >= 0 ? '+' : '';
+        months.forEach(monthKey => {
+            const monthData = groupedData[monthKey];
+            const monthDate = new Date(monthKey + '-01T00:00:00');
+            const monthName = monthDate.toLocaleDateString('lt-LT', { month: 'long', year: 'numeric' });
+            
+            const monthlyNet = monthData.monthlyIncome - monthData.monthlyExpense;
+            const monthlyNetColor = monthlyNet >= 0 ? 'income-color' : 'expense-color';
+            const monthlyNetSign = monthlyNet >= 0 ? '+' : '';
 
+            // MĖNESIO ANTRAŠTĖ
             finalHTML += `
-                <tr class="date-separator-row">
+                <tr class="month-separator-row">
                     <td colspan="8">
                         <div class="date-separator-content">
-                            <span class="date-display">${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                            <span class="daily-summary">
-                                <span class="daily-income">+${group.dailyIncome.toFixed(2)}</span>
-                                <span class="daily-expense">-${group.dailyExpense.toFixed(2)}</span>
-                                <span class="daily-net ${netColorClass}">${netSign}${dailyNet.toFixed(2)}</span>
+                            <span>${monthName.toUpperCase()}</span>
+                            <span class="monthly-summary">
+                                <span class="daily-income">+${monthData.monthlyIncome.toFixed(2)}</span>
+                                <span class="daily-expense">-${monthData.monthlyExpense.toFixed(2)}</span>
+                                <span class="daily-net ${monthlyNetColor}">${monthlyNetSign}${monthlyNet.toFixed(2)}</span>
                             </span>
                         </div>
                     </td>
                 </tr>
             `;
+            
+            const days = Object.keys(monthData.days).sort().reverse();
 
-            group.transactions.forEach(entry => {
-                const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
-                const isIncome = entry.type === 'income';
+            days.forEach(dayKey => {
+                const dayData = monthData.days[dayKey];
+                const displayDate = new Date(dayKey + 'T00:00:00');
+                const dailyNet = dayData.dailyIncome - dayData.dailyExpense;
+                const netColorClass = dailyNet >= 0 ? 'income-color' : 'expense-color';
+                const netSign = dailyNet >= 0 ? '+' : '';
 
-                totalIncomeUSD += isIncome ? amount_usd : 0;
-                totalExpenseUSD += !isIncome ? amount_usd : 0;
-                
-                if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
-                tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
-
-                const tokenSymbol = (window.appData.tokens[entry.token]?.symbol || entry.token.toUpperCase()).replace(' (SOL)', '');
-                const iconPath = `img/${entry.token.toLowerCase()}.svg`;
-                const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
-                const arrow = isIncome ? '▲' : '▼';
-
+                // DIENOS ANTRAŠTĖ
                 finalHTML += `
-                    <tr data-id="${entry.id}">
-                        <td class="align-middle">${entry.date}</td>
-                        <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
-                        <td class="token-cell align-middle">${tokenCellHTML}</td>
-                        <td class="align-middle">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
-                        <td class="align-middle">$${(entry.rate_usd || 0).toFixed(5)}</td>
-                        <td class="align-middle">$${amount_usd.toFixed(2)}</td>
-                        <td class="align-middle">${entry.description || ''}</td>
-                        <td class="log-table-actions align-middle">
-                            <button class="btn-edit">Taisyti</button>
-                            <button class="btn-delete">Trinti</button>
+                    <tr class="date-separator-row expanded" data-date-group="${dayKey}">
+                        <td colspan="8">
+                            <div class="date-separator-content">
+                                <span class="date-display">
+                                    <span class="toggle-arrow">▾</span>
+                                    ${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                </span>
+                                <span class="daily-summary">
+                                    <span class="daily-income">+${dayData.dailyIncome.toFixed(2)}</span>
+                                    <span class="daily-expense">-${dayData.dailyExpense.toFixed(2)}</span>
+                                    <span class="daily-net ${netColorClass}">${netSign}${dailyNet.toFixed(2)}</span>
+                                </span>
+                            </div>
                         </td>
                     </tr>
                 `;
+
+                dayData.transactions.forEach(entry => {
+                    const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
+                    const isIncome = entry.type === 'income';
+                    
+                    totalIncomeUSD += isIncome ? amount_usd : 0;
+                    totalExpenseUSD += !isIncome ? amount_usd : 0;
+                    
+                    if (!tokenBalances[entry.token]) tokenBalances[entry.token] = 0;
+                    tokenBalances[entry.token] += isIncome ? entry.token_amount : -entry.token_amount;
+                    
+                    const tokenSymbol = (window.appData.tokens[entry.token]?.symbol || entry.token.toUpperCase()).replace(' (SOL)', '');
+                    const iconPath = `img/${entry.token.toLowerCase()}.svg`;
+                    // fallback image
+                    const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
+                    const arrow = isIncome ? '▲' : '▼';
+
+                    // TRANSAKCIJOS EILUTĖ
+                    // Pašalinome 'hidden' klasę, kad rodytų iškart
+                    finalHTML += `
+                        <tr class="transaction-row" data-id="${entry.id}" data-date-group="${dayKey}">
+                            <td class="align-middle text-sm text-gray-400">${entry.date}</td>
+                            <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'} font-bold text-center">${arrow}</td>
+                            <td class="token-cell align-middle">${tokenCellHTML} <span class="ml-1">${tokenSymbol}</span></td>
+                            <td class="align-middle font-mono ${isIncome ? 'income-color' : 'expense-color'}">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}</td>
+                            <td class="align-middle text-gray-400">$${(entry.rate_usd || 0).toFixed(4)}</td>
+                            <td class="align-middle font-bold">$${amount_usd.toFixed(2)}</td>
+                            <td class="align-middle text-sm text-gray-300">${entry.description || ''}</td>
+                            <td class="log-table-actions align-middle">
+                                <button class="btn-edit">Taisyti</button>
+                                <button class="btn-delete">Trinti</button>
+                            </td>
+                        </tr>
+                    `;
+                });
             });
         });
         
@@ -392,20 +689,41 @@
     
     function renderSummary(income, expense, tokenBalances) {
         if (!loggerElements.summaryContainer) return;
+        
         const balance = income - expense;
-        const btcPrice = window.appData.prices['bitcoin']?.price;
+        const btcPrice = window.appData?.prices?.['bitcoin']?.price || 0;
+        
         let btcValueHTML = '';
-        if (btcPrice > 0) { btcValueHTML = `<div class="summary-row"><span class="summary-label btc-value"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5zm14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5z"/></svg> BTC Atitikmuo:</span><span class="summary-value btc-value">${(balance / btcPrice).toFixed(8)} BTC</span></div>`; }
-        let tokenBalancesHTML = '<hr class="my-4 border-gray-700"><h3 class="text-lg font-semibold mb-2">Žetonų Balansai</h3>';
+        if (btcPrice > 0) { 
+            btcValueHTML = `<div class="summary-row"><span class="summary-label btc-value"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5zm14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5z"/></svg> BTC Atitikmuo:</span><span class="summary-value btc-value">${(balance / btcPrice).toFixed(8)} BTC</span></div>`; 
+        }
+        
+        let tokenBalancesHTML = '<hr class="my-4 border-gray-700"><h3 class="text-lg font-semibold mb-2 text-white">Žetonų Balansai</h3>';
+        
+        const tokens = window.appData?.tokens || {};
+        
         Object.keys(tokenBalances).sort().forEach(token => { 
             const amount = tokenBalances[token];
-            let displayToken = window.appData.tokens[token]?.symbol || token.toUpperCase();
+            if (Math.abs(amount) < 0.0001) return; // Nerodom nulių
+            
+            let displayToken = tokens[token]?.symbol || token.toUpperCase();
             if (displayToken === 'GST (SOL)') {
                 displayToken = 'GST';
             }
-            tokenBalancesHTML += `<div class="summary-row"><span class="summary-label">${displayToken} Balansas:</span><span class="summary-value ${amount >= 0 ? 'income-color' : 'expense-color'}">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div>`; 
+            tokenBalancesHTML += `<div class="summary-row"><span class="summary-label">${displayToken}:</span><span class="summary-value ${amount >= 0 ? 'income-color' : 'expense-color'}">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div>`; 
         });
-        loggerElements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2">Bendra suvestinė (pagal filtrus)</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
+        
+        loggerElements.summaryContainer.innerHTML = `
+            <h3 class="text-lg font-semibold mb-2 text-white">Bendra suvestinė</h3>
+            <div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div>
+            <div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div>
+            <div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2">
+                <strong class="summary-label">Grynasis Balansas (USD):</strong>
+                <strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong>
+            </div>
+            ${btcValueHTML}
+            ${tokenBalancesHTML}
+        `;
     }
 
     function handleExportToCsv() {
@@ -414,7 +732,9 @@
                 alert('Nėra duomenų, kuriuos būtų galima eksportuoti.');
                 return;
             }
+
             const headers = [ "Data", "Platforma", "Tipas", "Kategorija", "Žetonas", "Kiekis", "Kursas (USD)", "Suma (USD)", "Aprašymas" ];
+
             const rows = currentLogData.map(entry => {
                 const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
                 return [
@@ -429,11 +749,14 @@
                     entry.description || ''
                 ].map(field => String(field)); 
             });
+
             const csvContent = [
                 headers.join(','),
                 ...rows.map(row => row.map(escapeCsvField).join(','))
             ].join('\n');
+
             downloadCsv(csvContent);
+
         } catch (error) {
             console.error("Įvyko klaida eksportuojant CSV:", error);
             alert(`Eksportavimo klaida: ${error.message}`);
