@@ -1,4 +1,4 @@
-// Failas: js/logger.js (Versija V1.2.0 - RLS: Privatus režimas)
+// Failas: js/logger.js (Versija V1.2.0 - RLS: Privatus režimas + 10k Limit Fix)
 
 (function() {
     'use strict';
@@ -208,7 +208,7 @@
         }
     }
 
-    // === 6. DUOMENŲ LOGIKA (PATAISYTA PAGAL INSTRUKCIJAS) ===
+    // === 6. DUOMENŲ LOGIKA (PATAISYTA: PRIDĖTAS RANGE) ===
     
     async function loadAndRenderLogTable() {
         const sb = getSupabase();
@@ -217,7 +217,6 @@
             return; 
         }
 
-        // KRITINIS PATAISYMAS: Tikrinti autentifikaciją
         const { data: { user } } = await sb.auth.getUser();
         
         if (!user) {
@@ -230,7 +229,6 @@
 
         console.log('✅ Prisijungęs vartotojas:', user.email, 'ID:', user.id);
 
-        // KRITINIS PATAISYMAS: Pridėti user_id filtrą
         let query = sb.from('transactions').select('*').eq('user_id', user.id);
         
         if (loggerElements.filterStartDate && loggerElements.filterStartDate.value) {
@@ -246,9 +244,12 @@
             query = query.eq('category', loggerElements.filterCategory.value);
         }
         
+        // ČIA VIENINTELIS PAKEITIMAS
         query = query.order(loggerElements.filterSort.value, { 
             ascending: loggerElements.filterOrder.value === 'asc' 
-        }).order('id', { ascending: false });
+        })
+        .order('id', { ascending: false })
+        .range(0, 9999); // NUIMAME 1000 RIBOJIMĄ
         
         const { data, error } = await query;
         
