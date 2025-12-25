@@ -1,9 +1,8 @@
-// Failas: js/logger.js (Versija V1.1.2 - Pridėta "Gem Removal" kategorija)
+// Failas: js/logger.js (Versija V1.1.2 - Pridėta "Gem Removal" kategorija + DEBUG)
 
 (function() {
     'use strict';
     
-    // === PAKEITIMAS PRASIDEDA ČIA ===
     const CATEGORIES = {
         go: {
             income: { "GGT Earnings": "GGT uždarbis", "Sneaker Rental": "Sportbačių nuoma", "Sneaker Sale": "Sportbačių pardavimas", "Shoe Box Sale": "Batų dėžės (Shoe Box) pardavimas", "Gem Sale": "Brangakmenių pardavimas", "Raw Stone Sale": "Neapdirbtų brangakmenių (Raw Stone) pardavimas", "Other": "Kita" },
@@ -11,7 +10,7 @@
                 "Level-up": "Lygio kėlimas", 
                 "Minting": "Mintinimas", 
                 "Socket Unlock": "Socket atidarymas",
-                "Gem Removal": "Brangakmenio išėmimas", // NAUJA KATEGORIJA
+                "Gem Removal": "Brangakmenio išėmimas",
                 "Mystery Box Speed-up": "Dėžutės atidarymo pagreitinimas", 
                 "Raw Stone Upgrade": "Neapdirbtų brangakmenių (Raw Stone) lygio kėlimas", 
                 "Sneaker Purchase": "Sportbačių pirkimas", 
@@ -26,7 +25,6 @@
             expense: { "Repair": "Taisymas (HP)", "Level-up": "Lygio kėlimas", "Mystery Box opening": "Dėžutės atidarymas", "Restore": "Atributų atkūrimas", "Minting": "Mintinimas", "Sneaker Purchase": "Sportbačių pirkimas", "Shoe Box Purchase": "Batų dėžės (Shoe Box) pirkimas", "Scroll Purchase": "'Minting Scroll' pirkimas", "Other": "Kita" }
         }
     };
-    // === PAKEITIMAS BAIGIASI ČIA ===
 
     const loggerElements = {};
     let currentLogData = []; 
@@ -348,7 +346,6 @@
         loggerElements.logCategory.disabled = Object.keys(platformCategories).length === 0;
     }
 
-    // === PAKEITIMAS PRASIDEDA ČIA ===
     function updateVisibleFields() {
         if (!loggerElements.platform || !loggerElements.logCategory) return;
         const platform = loggerElements.platform.value;
@@ -379,7 +376,6 @@
         } else if (platform === 'og' && category === 'Restore') {
             loggerElements.ogRestoreFields.classList.remove('hidden');
         } else if (platform === 'go' && (category === 'Socket Unlock' || category === 'Gem Removal')) {
-            // Sujungiame dvi GGT išlaidų kategorijas
             loggerElements.standardFields.classList.remove('hidden');
             updateTokenRadioButtons(['ggt']);
         } else if (category) {
@@ -393,7 +389,6 @@
             updateTokenRadioButtons(tokensForPlatform);
         }
     }
-    // === PAKEITIMAS BAIGIASI ČIA ===
 
     function updateTokenRadioButtons(tokensToShow) {
         if (!loggerElements.logTokenRadioGroup) return;
@@ -417,12 +412,16 @@
     
     async function loadAndRenderLogTable() {
         const { data: { user } } = await supabase.auth.getUser();
+        console.log('🔍 DEBUG: Current user:', user);
+        
         if (!user) {
+            console.log('⚠️ DEBUG: No user logged in');
             currentLogData = [];
             renderLogTable(currentLogData);
             populateFilterDropdowns(currentLogData);
             return;
         }
+        
         let query = supabase.from('transactions').select('*').eq('user_id', user.id);
         
         if (loggerElements.filterStartDate.value) query = query.gte('date', loggerElements.filterStartDate.value);
@@ -433,12 +432,18 @@
         query = query.order(loggerElements.filterSort.value, { ascending: loggerElements.filterOrder.value === 'asc' }).order('id', { ascending: false });
         
         const { data, error } = await query;
+        
+        console.log('📊 DEBUG: Fetched transactions count:', data ? data.length : 0);
+        console.log('❌ DEBUG: Error:', error);
+        
         if (error) { 
-            console.error('Klaida gaunant duomenis:', error); 
+            console.error('Klaida gaunant duomenis:', error);
+            alert(`Klaida gaunant transakcijas: ${error.message}`);
             return; 
         }
         
         currentLogData = data || [];
+        console.log('✅ DEBUG: Rendering', currentLogData.length, 'transactions');
         renderLogTable(currentLogData);
         populateFilterDropdowns(currentLogData);
     }
@@ -488,14 +493,11 @@
 
     function renderLogTable(data) {
         if (!loggerElements.logTableBody) return;
-        loggerElements.logTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Kraunama...</td></tr>';
-        
         if (!data || data.length === 0) {
-            loggerElements.logTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4">Įrašų nerasta.</td></tr>`;
+            loggerElements.logTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">Įrašų nerasta.</td></tr>`;
             renderSummary(0, 0, {});
             return;
         }
-
         const groupedData = groupDataByMonthAndDay(data);
         const months = Object.keys(groupedData).sort().reverse();
         let totalIncomeUSD = 0, totalExpenseUSD = 0;
@@ -510,47 +512,16 @@
             const monthlyNetColor = monthlyNet >= 0 ? 'income-color' : 'expense-color';
             const monthlyNetSign = monthlyNet >= 0 ? '+' : '';
 
-            finalHTML += `
-                <tr class="month-separator-row">
-                    <td colspan="8">
-                        <div class="date-separator-content">
-                            <span>${monthName.toUpperCase()}</span>
-                            <span class="monthly-summary">
-                                <span class="daily-income">+${monthData.monthlyIncome.toFixed(2)}</span>
-                                <span class="daily-expense">-${monthData.monthlyExpense.toFixed(2)}</span>
-                                <span class="daily-net ${monthlyNetColor}">${monthlyNetSign}${monthlyNet.toFixed(2)}</span>
-                            </span>
-                        </div>
-                    </td>
-                </tr>
-            `;
+            finalHTML += `<tr class="month-separator-row"><td colspan="8"><div class="date-separator-content"><span>${monthName.toUpperCase()}</span><span class="monthly-summary"><span class="daily-income">+${monthData.monthlyIncome.toFixed(2)}</span><span class="daily-expense">-${monthData.monthlyExpense.toFixed(2)}</span><span class="daily-net ${monthlyNetColor}">${monthlyNetSign}${monthlyNet.toFixed(2)}</span></span></div></td></tr>`;
             
-            const days = Object.keys(monthData.days).sort().reverse();
-
-            days.forEach(dayKey => {
+            Object.keys(monthData.days).sort().reverse().forEach(dayKey => {
                 const dayData = monthData.days[dayKey];
                 const displayDate = new Date(dayKey + 'T00:00:00');
                 const dailyNet = dayData.dailyIncome - dayData.dailyExpense;
                 const netColorClass = dailyNet >= 0 ? 'income-color' : 'expense-color';
                 const netSign = dailyNet >= 0 ? '+' : '';
 
-                finalHTML += `
-                    <tr class="date-separator-row" data-date-group="${dayKey}">
-                        <td colspan="8">
-                            <div class="date-separator-content">
-                                <span class="date-display">
-                                    <span class="toggle-arrow">▸</span>
-                                    ${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                                </span>
-                                <span class="daily-summary">
-                                    <span class="daily-income">+${dayData.dailyIncome.toFixed(2)}</span>
-                                    <span class="daily-expense">-${dayData.dailyExpense.toFixed(2)}</span>
-                                    <span class="daily-net ${netColorClass}">${netSign}${dailyNet.toFixed(2)}</span>
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                finalHTML += `<tr class="date-separator-row expanded" data-date-group="${dayKey}"><td colspan="8"><div class="date-separator-content"><span class="date-display"><span class="toggle-arrow">▾</span> ${displayDate.toLocaleDateString('lt-LT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span><span class="daily-summary"><span class="daily-income">+${dayData.dailyIncome.toFixed(2)}</span><span class="daily-expense">-${dayData.dailyExpense.toFixed(2)}</span><span class="daily-net ${netColorClass}">${netSign}${dailyNet.toFixed(2)}</span></span></div></td></tr>`;
 
                 dayData.transactions.forEach(entry => {
                     const amount_usd = (entry.token_amount || 0) * (entry.rate_usd || 0);
@@ -564,21 +535,7 @@
                     const tokenCellHTML = `<img src="${iconPath}" alt="${tokenSymbol}" class="token-icon-table" onerror="this.outerHTML = '<span>${tokenSymbol}</span>'">`;
                     const arrow = isIncome ? '▲' : '▼';
 
-                    finalHTML += `
-                        <tr class="transaction-row hidden" data-id="${entry.id}" data-date-group="${dayKey}">
-                            <td class="align-middle">${entry.date}</td>
-                            <td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'}">${arrow}</td>
-                            <td class="token-cell align-middle">${tokenCellHTML}</td>
-                            <td class="align-middle">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
-                            <td class="align-middle">$${(entry.rate_usd || 0).toFixed(5)}</td>
-                            <td class="align-middle">$${amount_usd.toFixed(2)}</td>
-                            <td class="align-middle">${entry.description || ''}</td>
-                            <td class="log-table-actions align-middle">
-                                <button class="btn-edit">Taisyti</button>
-                                <button class="btn-delete">Trinti</button>
-                            </td>
-                        </tr>
-                    `;
+                    finalHTML += `<tr class="transaction-row" data-id="${entry.id}" data-date-group="${dayKey}"><td class="align-middle text-sm text-gray-400">${entry.date}</td><td class="arrow-cell align-middle ${isIncome ? 'income-color' : 'expense-color'} font-bold text-center">${arrow}</td><td class="token-cell align-middle">${tokenCellHTML} <span class="ml-1">${tokenSymbol}</span></td><td class="align-middle font-mono ${isIncome ? 'income-color' : 'expense-color'}">${(entry.token_amount || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}</td><td class="align-middle text-gray-400">$${(entry.rate_usd || 0).toFixed(4)}</td><td class="align-middle font-bold">$${amount_usd.toFixed(2)}</td><td class="align-middle text-sm text-gray-300">${entry.description || ''}</td><td class="log-table-actions align-middle"><button class="btn-edit">Taisyti</button><button class="btn-delete">Trinti</button></td></tr>`;
                 });
             });
         });
@@ -590,19 +547,19 @@
     function renderSummary(income, expense, tokenBalances) {
         if (!loggerElements.summaryContainer) return;
         const balance = income - expense;
-        const btcPrice = window.appData.prices['bitcoin']?.price;
+        const btcPrice = window.appData?.prices?.['bitcoin']?.price || 0;
         let btcValueHTML = '';
         if (btcPrice > 0) { btcValueHTML = `<div class="summary-row"><span class="summary-label btc-value"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5zm14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5z"/></svg> BTC Atitikmuo:</span><span class="summary-value btc-value">${(balance / btcPrice).toFixed(8)} BTC</span></div>`; }
-        let tokenBalancesHTML = '<hr class="my-4 border-gray-700"><h3 class="text-lg font-semibold mb-2">Žetonų Balansai</h3>';
+        let tokenBalancesHTML = '<hr class="my-4 border-gray-700"><h3 class="text-lg font-semibold mb-2 text-white">Žetonų Balansai</h3>';
+        const tokens = window.appData?.tokens || {};
         Object.keys(tokenBalances).sort().forEach(token => { 
             const amount = tokenBalances[token];
-            let displayToken = window.appData.tokens[token]?.symbol || token.toUpperCase();
-            if (displayToken === 'GST (SOL)') {
-                displayToken = 'GST';
-            }
-            tokenBalancesHTML += `<div class="summary-row"><span class="summary-label">${displayToken} Balansas:</span><span class="summary-value ${amount >= 0 ? 'income-color' : 'expense-color'}">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div>`; 
+            if (Math.abs(amount) < 0.0001) return;
+            let displayToken = tokens[token]?.symbol || token.toUpperCase();
+            if (displayToken === 'GST (SOL)') displayToken = 'GST';
+            tokenBalancesHTML += `<div class="summary-row"><span class="summary-label">${displayToken}:</span><span class="summary-value ${amount >= 0 ? 'income-color' : 'expense-color'}">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div>`; 
         });
-        loggerElements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2">Bendra suvestinė (pagal filtrus)</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
+        loggerElements.summaryContainer.innerHTML = `<h3 class="text-lg font-semibold mb-2 text-white">Bendra suvestinė</h3><div class="summary-row"><span class="summary-label">Viso Pajamų (USD):</span><span class="summary-value income-color">$${income.toFixed(2)}</span></div><div class="summary-row"><span class="summary-label">Viso Išlaidų (USD):</span><span class="summary-value expense-color">$${expense.toFixed(2)}</span></div><div class="summary-row text-lg border-t border-gray-700 mt-2 pt-2"><strong class="summary-label">Grynasis Balansas (USD):</strong><strong class="summary-value ${balance >= 0 ? 'income-color' : 'expense-color'}">$${balance.toFixed(2)}</strong></div>${btcValueHTML}${tokenBalancesHTML}`;
     }
 
     function handleExportToCsv() {
